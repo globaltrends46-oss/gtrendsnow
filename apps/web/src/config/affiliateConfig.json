@@ -1,0 +1,22 @@
+{
+  "crorepathi_solver": {
+    "link": "https://example.com/mutual-funds",
+    "label": "Mutual Funds"
+  },
+  "credit_card_optimizer": {
+    "link": "https://example.com/credit-cards",
+    "label": "Credit Cards"
+  },
+  "viral_hook_gen": {
+    "link": "https://example.com/video-tool",
+    "label": "Video Tool"
+  },
+  "dropship_margin": {
+    "link": "https://example.com/ecommerce",
+    "label": "E-commerce"
+  },
+  "gigs_apply": {
+    "link": "https://example.com/job-board",
+    "label": "Job Board"
+  }
+}

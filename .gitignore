@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Local env files (Crucial to prevent API key leaks in public repo)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build output
+dist/
+build/
+.production/
+out/
+
+# Database files
+apps/pocketbase/pb_data/
+apps/pocketbase/pb_data_*
+*.db
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

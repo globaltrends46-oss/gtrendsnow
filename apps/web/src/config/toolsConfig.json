@@ -1,0 +1,170 @@
+{
+  "tools": [
+    {
+      "id": "millionaire_solver",
+      "category": "wealth",
+      "title": "Millionaire Goal Solver",
+      "description": "Plan your path to $1 Million. Leave ONE field blank, and we'll calculate it for you.",
+      "requiresOTP": true,
+      "inputs": [
+        {
+          "name": "targetAmount",
+          "type": "number",
+          "label": "Target Amount ($)",
+          "required": false
+        },
+        {
+          "name": "monthlyInvestment",
+          "type": "number",
+          "label": "Monthly Investment ($)",
+          "required": false
+        },
+        {
+          "name": "years",
+          "type": "number",
+          "label": "Time Horizon (Years)",
+          "required": false
+        },
+        {
+          "name": "expectedReturn",
+          "type": "number",
+          "label": "Expected Return (%)",
+          "required": false
+        }
+      ],
+      "calculation": {
+        "type": "solve-for-blank"
+      },
+      "results": {
+        "format": "custom",
+        "fields": [
+          { "name": "targetAmount", "label": "Target Amount", "type": "currency" },
+          { "name": "monthlyInvestment", "label": "Required Investment", "type": "currency" },
+          { "name": "years", "label": "Time Horizon", "type": "number" },
+          { "name": "expectedReturn", "label": "Required Return", "type": "percentage" },
+          { "name": "recommendation", "label": "Insight", "type": "text" }
+        ]
+      }
+    },
+    {
+      "id": "card_optimizer",
+      "category": "credit",
+      "title": "Credit Card Reward Matchmaker",
+      "description": "Find the perfect card based on your monthly spending habits.",
+      "requiresOTP": true,
+      "inputs": [
+        {
+          "name": "grocerySpend",
+          "type": "number",
+          "label": "Monthly Grocery Spend ($)",
+          "required": true
+        },
+        {
+          "name": "travelSpend",
+          "type": "number",
+          "label": "Monthly Travel Spend ($)",
+          "required": true
+        },
+        {
+          "name": "diningSpend",
+          "type": "number",
+          "label": "Monthly Dining Spend ($)",
+          "required": true
+        }
+      ],
+      "calculation": {
+        "type": "card-match"
+      },
+      "results": {
+        "format": "custom",
+        "fields": [
+          { "name": "annualSpend", "label": "Total Annual Spend", "type": "currency" },
+          { "name": "recommendedCard", "label": "Best Card Profile", "type": "text" },
+          { "name": "maxRewards", "label": "Estimated Annual Rewards", "type": "currency" },
+          { "name": "rewardRate", "label": "Effective Reward Rate", "type": "percentage" },
+          { "name": "recommendation", "label": "Summary", "type": "text" }
+        ]
+      }
+    },
+    {
+      "id": "viral_hook_gen",
+      "category": "creator",
+      "title": "Viral Hook & Script Generator",
+      "description": "Generate platform-specific, high-converting hooks for your next video.",
+      "requiresOTP": false,
+      "inputs": [
+        {
+          "name": "videoTopic",
+          "type": "text",
+          "label": "Video Topic / Niche",
+          "required": true
+        },
+        {
+          "name": "platform",
+          "type": "select",
+          "label": "Platform",
+          "required": true,
+          "options": [
+            { "value": "tiktok", "label": "TikTok" },
+            { "value": "yt_shorts", "label": "YouTube Shorts" },
+            { "value": "linkedin", "label": "LinkedIn" }
+          ]
+        }
+      ],
+      "calculation": {
+        "type": "hook-gen"
+      },
+      "results": {
+        "format": "custom",
+        "fields": [
+          { "name": "platform", "label": "Target Platform", "type": "text" },
+          { "name": "hook1", "label": "Hook Option 1", "type": "text" },
+          { "name": "hook2", "label": "Hook Option 2", "type": "text" },
+          { "name": "hook3", "label": "Hook Option 3", "type": "text" },
+          { "name": "proTip", "label": "Pro Tip", "type": "text" }
+        ]
+      }
+    },
+    {
+      "id": "dropship_margin",
+      "category": "ecom",
+      "title": "Dropshipping Profit Architect",
+      "description": "Calculate true margins and break-even points before launching ads.",
+      "requiresOTP": false,
+      "inputs": [
+        {
+          "name": "productCost",
+          "type": "number",
+          "label": "Product Cost ($)",
+          "required": true
+        },
+        {
+          "name": "sellingPrice",
+          "type": "number",
+          "label": "Selling Price ($)",
+          "required": true
+        },
+        {
+          "name": "dailyAdSpend",
+          "type": "number",
+          "label": "Daily Ad Spend ($)",
+          "required": true
+        }
+      ],
+      "calculation": {
+        "type": "margin-calc"
+      },
+      "results": {
+        "format": "custom",
+        "fields": [
+          { "name": "grossProfit", "label": "Gross Profit per Unit", "type": "currency" },
+          { "name": "grossMargin", "label": "Gross Margin", "type": "percentage" },
+          { "name": "monthlyAdSpend", "label": "Monthly Ad Spend", "type": "currency" },
+          { "name": "breakEvenUnits", "label": "Break-Even Units / Month", "type": "number" },
+          { "name": "recommendedPrice", "label": "Price for 40% Margin", "type": "currency" },
+          { "name": "recommendation", "label": "Insight", "type": "text" }
+        ]
+      }
+    }
+  ]
+}

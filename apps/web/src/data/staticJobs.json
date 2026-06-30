@@ -1,0 +1,125 @@
+[
+  {
+    "_comment": "To update jobs weekly, edit this file with new listings. Structure is designed for easy migration to Adzuna or Remotive API later."
+  },
+  {
+    "id": "fin-001",
+    "title": "Senior Financial Analyst",
+    "company": "Alpha Capital Partners",
+    "location": "London, UK",
+    "currency": "GBP",
+    "salaryRange": "65,000 - 92,000",
+    "skills": ["Financial Modeling", "Python", "SQL", "Statistics"],
+    "experience": "5+ Years",
+    "category": "Finance",
+    "viewDetailsLink": "https://www.google.com/search?q=Senior+Financial+Analyst+London"
+  },
+  {
+    "id": "cw-001",
+    "title": "AI Content Strategist",
+    "company": "GrowthSpur Media",
+    "location": "New York, USA",
+    "currency": "USD",
+    "salaryRange": "95,000 - 140,000",
+    "skills": ["SEO", "AI Tools", "Content Strategy", "Analytics"],
+    "experience": "3-5 Years",
+    "category": "Content Writing",
+    "viewDetailsLink": "https://www.google.com/search?q=AI+Content+Strategist+New+York"
+  },
+  {
+    "id": "fin-002",
+    "title": "Wealth Management Consultant",
+    "company": "Apex Wealth Advisory",
+    "location": "Frankfurt, Germany",
+    "currency": "EUR",
+    "salaryRange": "75,000 - 110,000",
+    "skills": ["Portfolio Management", "Client Relations", "CFP"],
+    "experience": "5+ Years",
+    "category": "Finance",
+    "viewDetailsLink": "https://www.google.com/search?q=Wealth+Management+Consultant+Frankfurt"
+  },
+  {
+    "id": "fin-003",
+    "title": "Data Science Manager",
+    "company": "Global Tech Solutions",
+    "location": "San Francisco, USA",
+    "currency": "USD",
+    "salaryRange": "120,000 - 160,000",
+    "skills": ["Machine Learning", "Python", "Team Leadership"],
+    "experience": "7+ Years",
+    "category": "Finance",
+    "viewDetailsLink": "https://www.google.com/search?q=Data+Science+Manager+San+Francisco"
+  },
+  {
+    "id": "fin-004",
+    "title": "Investment Research Lead",
+    "company": "Web3 Ventures",
+    "location": "Dublin, Ireland",
+    "currency": "EUR",
+    "salaryRange": "70,000 - 100,000",
+    "skills": ["Market Research", "Equities", "Financial Analysis"],
+    "experience": "4-6 Years",
+    "category": "Finance",
+    "viewDetailsLink": "https://www.google.com/search?q=Investment+Research+Lead+Dublin"
+  },
+  {
+    "id": "cw-002",
+    "title": "Technical Copywriter",
+    "company": "FinTech Innovators",
+    "location": "Austin, USA",
+    "currency": "USD",
+    "salaryRange": "85,000 - 115,000",
+    "skills": ["Technical Writing", "API Documentation", "Finance"],
+    "experience": "4+ Years",
+    "category": "Content Writing",
+    "viewDetailsLink": "https://www.google.com/search?q=Technical+Copywriter+jobs"
+  },
+  {
+    "id": "cw-003",
+    "title": "UX Writer & Content Strategist",
+    "company": "DesignFlow Agency",
+    "location": "London, UK",
+    "currency": "GBP",
+    "salaryRange": "50,000 - 75,000",
+    "skills": ["UX Writing", "Figma", "Microcopy", "User Research"],
+    "experience": "5+ Years",
+    "category": "Content Writing",
+    "viewDetailsLink": "https://www.google.com/search?q=UX+Writer+jobs"
+  },
+  {
+    "id": "cw-004",
+    "title": "Social Media Storyteller",
+    "company": "ViralBrands Inc.",
+    "location": "Remote",
+    "currency": "USD",
+    "salaryRange": "60,000 - 90,000",
+    "skills": ["Twitter/X", "LinkedIn Growth", "Copywriting"],
+    "experience": "1-3 Years",
+    "category": "Content Writing",
+    "viewDetailsLink": "https://www.google.com/search?q=Social+Media+Storyteller+jobs"
+  },
+  {
+    "id": "fin-005",
+    "title": "Corporate Finance Manager",
+    "company": "ScaleUp Financials",
+    "location": "Chicago, USA",
+    "currency": "USD",
+    "salaryRange": "130,000 - 175,000",
+    "skills": ["FP&A", "Budgeting", "M&A", "Excel"],
+    "experience": "7+ Years",
+    "category": "Finance",
+    "viewDetailsLink": "https://www.google.com/search?q=Corporate+Finance+Manager+jobs"
+  },
+  {
+    "id": "cw-005",
+    "title": "Direct Response Copywriter",
+    "company": "Conversion Labs",
+    "location": "Berlin, Germany",
+    "currency": "EUR",
+    "salaryRange": "60,000 - 90,000",
+    "skills": ["Email Marketing", "Landing Pages", "Sales Funnels"],
+    "experience": "3+ Years",
+    "category": "Content Writing",
+    "viewDetailsLink": "https://www.google.com/search?q=Direct+Response+Copywriter+jobs"
+  }
+]
