@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "node --trace-deprecation --env-file=.env src/main.js",
-    "start": "node --env-file=.env src/main.js",
+    "start": "node src/main.js",
     "build": "echo 'Build complete - ES modules ready'",
     "lint": "eslint . --quiet"
   },
