@@ -63,6 +63,7 @@ app.use(express.urlencoded({
 }));
 
 app.use('/', routes());
+app.use('/hcgi/api', routes());
 
 app.use(errorMiddleware);
 
