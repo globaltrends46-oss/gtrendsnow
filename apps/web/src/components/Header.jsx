@@ -5,6 +5,7 @@ import { Menu, X, LayoutDashboard } from 'lucide-react';
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
   { name: 'E-commerce', path: '/ecom' },
+  { name: 'CV Builder', path: '/resume-builder' },
   { name: 'Articles', path: '/articles' },
   { name: 'Blog', path: '/blog' },
   { name: 'Vault', path: '/vault' },

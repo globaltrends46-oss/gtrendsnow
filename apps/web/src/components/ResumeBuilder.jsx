@@ -1,9 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { FileText, Download, Lock, Crown, Sparkles, Loader2, Upload, FileCheck, CheckCircle2, AlertCircle, Palette, Type, Layout } from 'lucide-react';
-import { triggerGumroad } from '@/utils/gumroadHelper.js';
-import { useVipAuth } from '@/contexts/VipAuthContext.jsx';
 import apiServerClient from '@/lib/apiServerClient.js';
-import PaywallModal from '@/components/PaywallModal.jsx';
 
 // Simple markdown-to-html converter for PDF generation
 const parseMarkdownToHtmlForPDF = (text) => {
@@ -23,9 +20,57 @@ const parseMarkdownToHtmlForPDF = (text) => {
 };
 
 const ResumeBuilder = () => {
-  const { isVipUser } = useVipAuth();
   const fileInputRef = useRef(null);
-  
+
+  const checkGenerationLimit = () => {
+    const limitKey = 'gtrends_cv_generations';
+    const limitData = localStorage.getItem(limitKey);
+    const now = Date.now();
+    const FOUR_HOURS = 4 * 60 * 60 * 1000;
+
+    if (!limitData) {
+      return { allowed: true, count: 0 };
+    }
+
+    try {
+      const { count, firstGenTime } = JSON.parse(limitData);
+
+      if (now - firstGenTime > FOUR_HOURS) {
+        localStorage.removeItem(limitKey);
+        return { allowed: true, count: 0 };
+      }
+
+      if (count >= 2) {
+        const remainingMs = firstGenTime + FOUR_HOURS - now;
+        const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+        const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+        return { allowed: false, hours, minutes };
+      }
+
+      return { allowed: true, count };
+    } catch (e) {
+      localStorage.removeItem(limitKey);
+      return { allowed: true, count: 0 };
+    }
+  };
+
+  const incrementGenerationCount = () => {
+    const limitKey = 'gtrends_cv_generations';
+    const limitData = localStorage.getItem(limitKey);
+    const now = Date.now();
+
+    if (!limitData) {
+      localStorage.setItem(limitKey, JSON.stringify({ count: 1, firstGenTime: now }));
+    } else {
+      try {
+        const { count, firstGenTime } = JSON.parse(limitData);
+        localStorage.setItem(limitKey, JSON.stringify({ count: count + 1, firstGenTime }));
+      } catch (e) {
+        localStorage.setItem(limitKey, JSON.stringify({ count: 1, firstGenTime: now }));
+      }
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     targetJobTitle: '',
@@ -43,8 +88,6 @@ const ResumeBuilder = () => {
     color: 'blue', // blue, green, charcoal, burgundy
     font: 'Inter', // Inter, Playfair, Outfit
   });
-  
-  const [showPaywall, setShowPaywall] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
   const [atsAudit, setAtsAudit] = useState({
@@ -90,8 +133,9 @@ const ResumeBuilder = () => {
       return;
     }
     
-    if (!isVipUser) {
-      setShowPaywall(true);
+    const limitStatus = checkGenerationLimit();
+    if (!limitStatus.allowed) {
+      setError(`You have reached the free limit of 2 optimizations. Please come back in ${limitStatus.hours} hour(s) and ${limitStatus.minutes} minute(s) to retry!`);
       return;
     }
     
@@ -124,6 +168,7 @@ const ResumeBuilder = () => {
           missingKeywords: data.missingKeywords || [],
           suggestions: data.suggestions || [],
         });
+        incrementGenerationCount();
       } else {
         setError('Failed to generate resume. Please check your inputs and try again.');
       }
@@ -236,7 +281,7 @@ const ResumeBuilder = () => {
         <div className="flex gap-3">
           <button 
             onClick={handleDownloadPDF}
-            disabled={!isVipUser || isGenerating || !generatedContent} 
+            disabled={isGenerating || !generatedContent} 
             className="disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-bold hover:brightness-110 transition-all active:scale-[0.98] shadow-sm"
           >
             <Download className="w-4 h-4" /> Download PDF
@@ -488,33 +533,10 @@ const ResumeBuilder = () => {
                   <p className="text-sm font-medium">Build your profile and click generate to audit</p>
                 </div>
               )}
-
-              {/* Paywall Overlay */}
-              {!isVipUser && generatedContent && !isGenerating && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px] p-6 text-center">
-                  <div className="w-16 h-16 bg-[#FFD700]/20 rounded-full flex items-center justify-center mb-4">
-                    <Lock className="w-8 h-8 text-[#FFD700]" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">VIP Access Required</h3>
-                  <p className="text-gray-600 text-sm mb-6 max-w-xs">
-                    Subscribe to VIP to unlock PDF downloads, layout designs, and complete AI ATS optimization reviews.
-                  </p>
-                  <button
-                    onClick={triggerGumroad}
-                    className="w-full max-w-xs py-3 rounded-xl font-bold text-black transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
-                    style={{ backgroundColor: '#FFD700', boxShadow: '0 4px 14px rgba(255, 215, 0, 0.25)' }}
-                  >
-                    <Crown className="w-5 h-5" />
-                    Subscribe Now
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
-
-      <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
     </div>
   );
 };

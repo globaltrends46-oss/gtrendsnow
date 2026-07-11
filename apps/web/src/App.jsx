@@ -12,6 +12,7 @@ import VaultPage from './pages/VaultPage.jsx';
 import BlogPage from './pages/BlogPage.jsx';
 import ArticlesPage from './pages/ArticlesPage.jsx';
 import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
+import ResumeBuilderPage from './pages/ResumeBuilderPage.jsx';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx';
 import CookiePolicyPage from './pages/CookiePolicyPage.jsx';
@@ -42,6 +43,7 @@ function App() {
         <Route path="/blog/:id" element={<ArticleDetailPage />} />
         <Route path="/articles" element={<ArticlesPage />} />
         <Route path="/articles/:id" element={<ArticleDetailPage />} />
+        <Route path="/resume-builder" element={<ResumeBuilderPage />} />
         
         {/* Legal Pages */}
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
