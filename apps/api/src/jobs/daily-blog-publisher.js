@@ -73,6 +73,30 @@ function parseAISubmission(aiOutput, fallbackTitle) {
 }
 
 /**
+ * Keeps only the latest 20 articles in the database for a specific category, deleting the oldest ones.
+ */
+async function enforcePostLimit(pb, category, activeLogger) {
+  try {
+    const existingPosts = await pb.collection('blog_posts').getFullList({
+      filter: `category = "${category}"`,
+      sort: '-published_date',
+      $autoCancel: false
+    });
+
+    if (existingPosts.length > 20) {
+      activeLogger.info(`🧹 Category "${category}" has ${existingPosts.length} posts. Enforcing 20 post limit...`);
+      const postsToDelete = existingPosts.slice(20);
+      for (const post of postsToDelete) {
+        await pb.collection('blog_posts').delete(post.id, { $autoCancel: false });
+        activeLogger.info(`🗑️ Deleted old post: "${post.title}" (ID: ${post.id})`);
+      }
+    }
+  } catch (err) {
+    activeLogger.warn(`⚠️ Failed to enforce post limit for category [${category}]:`, err.message);
+  }
+}
+
+/**
  * Task 1: Fetch Google Trends daily searches RSS and parse trending keywords
  */
 export async function getGoogleTrendsKeywords() {
@@ -170,6 +194,9 @@ Do not wrap your response in markdown code blocks like \`\`\`json. Return pure J
         published_date: new Date().toISOString()
       });
 
+      // Enforce the 20 articles limit per category
+      await enforcePostLimit(pb, category, activeLogger);
+
       activeLogger.info(`✅ Successfully published daily blog for category [${category}]: "${parsed.title}" (ID: ${record.id})`);
     } catch (err) {
       activeLogger.error(`❌ Failed to publish daily blog for category [${category}]:`, err.message);
@@ -258,6 +285,9 @@ Do not wrap your response in markdown code blocks like \`\`\`json. Return pure J
       status: 'published',
       published_date: new Date().toISOString()
     });
+
+    // Enforce the 20 articles limit for trendjacking
+    await enforcePostLimit(pb, 'trendjacking', activeLogger);
 
     activeLogger.info(`✅ Successfully published trendjacking article: "${parsed.title}" (ID: ${record.id})`);
   } catch (err) {
