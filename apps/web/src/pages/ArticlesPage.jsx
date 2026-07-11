@@ -6,32 +6,7 @@ import Footer from '@/components/Footer.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { Tag, Calendar, User, Clock } from 'lucide-react';
 
-const fallbackArticles = [
-  {
-    id: 'fb-1',
-    title: 'Mastering Scale: How Strategic Automation Drives Global E-Commerce Efficiency',
-    description: 'An analytical breakdown of supply chain frameworks and operational margins.',
-    content: 'Full details of global e-commerce systems...',
-    published_date: new Date().toISOString(),
-    author: 'GTrends Team'
-  },
-  {
-    id: 'fb-2',
-    title: 'The Macro Shift: Transforming Enterprise Portfolios with Data Analytics',
-    description: 'Tracking how financial asset metrics adjust to modern algorithmic scaling.',
-    content: 'Full details of data analytics and portfolios...',
-    published_date: new Date().toISOString(),
-    author: 'GTrends Team'
-  },
-  {
-    id: 'fb-3',
-    title: 'Velocity Systems: Why Modern Capital Funnels Prioritize Predictive Utilities',
-    description: 'Evaluating cross-border transaction dynamics and conversion workflows.',
-    content: 'Full details of predictive conversion workflows...',
-    published_date: new Date().toISOString(),
-    author: 'GTrends Team'
-  }
-];
+import { fallbackArticles } from '@/lib/fallbackData.js';
 
 const ArticlesPage = () => {
   const [articles, setArticles] = useState([]);

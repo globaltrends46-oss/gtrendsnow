@@ -7,6 +7,7 @@ import NewsCard from '@/components/NewsCard.jsx';
 import pb from '@/lib/pocketbaseClient.js';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { fallbackBlogPosts } from '@/lib/fallbackData.js';
 
 const TABS = [
   { id: 'geopolitics', label: 'Geopolitics', icon: Globe },
@@ -31,20 +32,23 @@ const BlogPage = () => {
         $autoCancel: false
       });
 
-      const mapped = records.items.map(record => ({
-        id: record.id,
-        title: record.title,
-        description: record.content ? record.content.substring(0, 180).replace(/[#*]/g, '') + '...' : '',
-        urlToImage: record.featured_image,
-        source: { name: record.author || 'GTrends AI' },
-        publishedAt: record.published_date || record.created,
-        link: `/blog/${record.id}`
-      }));
-
-      setArticles(mapped);
+      if (records.items.length > 0) {
+        const mapped = records.items.map(record => ({
+          id: record.id,
+          title: record.title,
+          description: record.content ? record.content.substring(0, 180).replace(/[#*]/g, '') + '...' : '',
+          urlToImage: record.featured_image,
+          source: { name: record.author || 'GTrends AI' },
+          publishedAt: record.published_date || record.created,
+          link: `/blog/${record.id}`
+        }));
+        setArticles(mapped);
+      } else {
+        setArticles(fallbackBlogPosts[category] || []);
+      }
     } catch (err) {
-      console.error("Error fetching local articles:", err);
-      setArticles([]);
+      console.error("Error fetching local articles, using fallback:", err);
+      setArticles(fallbackBlogPosts[category] || []);
     } finally {
       setLoading(false);
     }
