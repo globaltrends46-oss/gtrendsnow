@@ -25,6 +25,63 @@ const parseMarkdown = (text) => {
   return { __html: `<p class="mb-5 leading-relaxed text-muted-foreground">${html}</p>` };
 };
 
+const fallbackArticles = [
+  {
+    id: 'fb-1',
+    title: 'Mastering Scale: How Strategic Automation Drives Global E-Commerce Efficiency',
+    description: 'An analytical breakdown of supply chain frameworks and operational margins.',
+    content: `### Strategic Automation in E-Commerce
+
+Modern retail operations depend on high-throughput automation. By implementing automated order routing, real-time inventory management, and robotic picking systems, e-commerce giants reduce operational overhead and cycle times.
+
+### Key Performance Indicators
+- **Picking accuracy:** Increased by 99.4% through optical scanner routing.
+- **Delivery speed:** Reduced dispatch times from 24 hours to under 2 hours.
+- **Margins:** Improved EBITDA margins by 4.2% globally.
+
+### Future Outlook
+As machine learning optimizes routing algorithms, warehouse networks will transition to fully predictive distribution centers.`,
+    published_date: new Date().toISOString(),
+    author: 'GTrends Team'
+  },
+  {
+    id: 'fb-2',
+    title: 'The Macro Shift: Transforming Enterprise Portfolios with Data Analytics',
+    description: 'Tracking how financial asset metrics adjust to modern algorithmic scaling.',
+    content: `### Portfolio Analytics in Modern Markets
+
+Institutional investment firms are leveraging custom data lakes to parse macro sentiment and unstructured alternative data. By scaling data ingest pipelines, portfolio analysts can adjust risk metrics programmatically.
+
+### Optimization Strategies
+- **Alternative Data Integration:** Tracking shipping manifests, weather feeds, and satellite imaging.
+- **Latency Optimization:** Real-time stream processing using cluster nodes.
+- **Risk Mitigation:** Automatically hedging positions based on real-time sentiment alerts.
+
+### Summary
+The transition from batch processing to real-time risk assessment is redrawing the competitive landscape for modern hedge funds.`,
+    published_date: new Date().toISOString(),
+    author: 'GTrends Team'
+  },
+  {
+    id: 'fb-3',
+    title: 'Velocity Systems: Why Modern Capital Funnels Prioritize Predictive Utilities',
+    description: 'Evaluating cross-border transaction dynamics and conversion workflows.',
+    content: `### Modern Capital Conversion Funnels
+
+Cross-border liquidity relies on robust, low-friction transactional pipelines. By prioritizing predictive cash-flow forecasting models, modern treasury operations maintain capital velocity across diverse international jurisdictions.
+
+### Key Pillars of Velocity
+- **Liquidity Buffers:** Algorithmic balance maintenance.
+- **FX Hedging:** Real-time currency conversions.
+- **Compliance Automation:** Screening transactions instantly using security protocols.
+
+### Conclusion
+Optimizing transaction speed ensures maximum utilization of capital reserves.`,
+    published_date: new Date().toISOString(),
+    author: 'GTrends Team'
+  }
+];
+
 const ArticleDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -35,6 +92,13 @@ const ArticleDetailPage = () => {
     const fetchArticle = async () => {
       try {
         setLoading(true);
+        if (id && id.startsWith('fb-')) {
+          const fbArt = fallbackArticles.find(a => a.id === id);
+          if (fbArt) {
+            setArticle(fbArt);
+            return;
+          }
+        }
         // Fetch article by ID from pocketbase blog_posts collection
         const record = await pb.collection('blog_posts').getOne(id, { $autoCancel: false });
         setArticle(record);

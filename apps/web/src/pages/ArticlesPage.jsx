@@ -68,8 +68,8 @@ const ArticlesPage = () => {
   return (
     <>
       <Helmet>
-        <title>Trendjacking Intelligence | GTrends Global</title>
-        <meta name="description" content="Latest trendjacking analysis and breaking news insights curated globally from hot keywords." />
+        <title>Trending Insights | GTrends Global</title>
+        <meta name="description" content="Latest breaking news insights and trends curated globally from hot keywords." />
       </Helmet>
 
       <div className="min-h-screen bg-[#0f172a] text-[#f8fafc] flex flex-col">
@@ -83,7 +83,7 @@ const ArticlesPage = () => {
                 🔥 Live Trends
               </span>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
-                Trendjacking Intelligence
+                Trending Insights
               </h1>
               <p className="text-lg text-[#94a3b8] max-w-2xl">
                 Daily breaking articles capturing the world's most queried global topics, analyzed locally in real-time.
@@ -129,7 +129,7 @@ const ArticlesPage = () => {
                           <span>{readTime} min read</span>
                         </div>
 
-                        <Link to={article.id.startsWith('fb-') ? '#' : `/articles/${article.id}`} className="block flex-1 mb-4">
+                        <Link to={`/articles/${article.id}`} className="block flex-1 mb-4">
                           <h3 className="text-xl font-bold text-white leading-snug group-hover:text-primary transition-colors">
                             {article.title}
                           </h3>
@@ -142,14 +142,12 @@ const ArticlesPage = () => {
                           <span className="text-xs font-semibold text-muted-foreground">
                             By {article.author || 'GTrends Staff'}
                           </span>
-                          {!article.id.startsWith('fb-') && (
-                            <Link 
-                              to={`/articles/${article.id}`}
-                              className="text-primary hover:text-primary-focus text-xs font-bold transition-colors"
-                            >
-                              Read Full Article →
-                            </Link>
-                          )}
+                          <Link 
+                            to={`/articles/${article.id}`}
+                            className="text-primary hover:text-primary-focus text-xs font-bold transition-colors"
+                          >
+                            Read Full Article →
+                          </Link>
                         </div>
                       </div>
                     </article>
