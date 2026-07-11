@@ -76,40 +76,60 @@ function parseAISubmission(aiOutput, fallbackTitle) {
  * Task 1: Fetch Google Trends daily searches RSS and parse trending keywords
  */
 export async function getGoogleTrendsKeywords() {
-  try {
-    logger.info('📡 Fetching Google Trends US Daily RSS feed...');
-    const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  const fetchGeoKeywords = async (geo) => {
+    try {
+      logger.info(`📡 Fetching Google Trends ${geo} Daily RSS feed...`);
+      const res = await fetch(`https://trends.google.com/trending/rss?geo=${geo}`, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      if (!res.ok) {
+        throw new Error(`Trends API for ${geo} returned status ${res.status}`);
       }
-    });
-    if (!res.ok) {
-      throw new Error(`Trends API returned status ${res.status}`);
-    }
-    const xml = await res.text();
-    
-    const items = xml.split('<item>');
-    const keywords = [];
-    for (let i = 1; i < items.length; i++) {
-      const titleMatch = items[i].match(/<title>([\s\S]*?)<\/title>/);
-      if (titleMatch) {
-        keywords.push(titleMatch[1].trim());
+      const xml = await res.text();
+      const items = xml.split('<item>');
+      const keywords = [];
+      for (let i = 1; i < items.length; i++) {
+        const titleMatch = items[i].match(/<title>([\s\S]*?)<\/title>/);
+        if (titleMatch) {
+          keywords.push(titleMatch[1].trim());
+        }
       }
+      return keywords;
+    } catch (error) {
+      logger.error(`❌ Failed to fetch Google Trends keywords for ${geo}:`, error.message);
+      return [];
     }
-    logger.info(`🔥 Scraped Google Trends keywords: ${keywords.slice(0, 5).join(', ')}`);
-    return keywords;
-  } catch (error) {
-    logger.error('❌ Failed to fetch Google Trends keywords:', error.message);
-    return [];
+  };
+
+  const [usKeywords, ukKeywords] = await Promise.all([
+    fetchGeoKeywords('US'),
+    fetchGeoKeywords('GB')
+  ]);
+
+  // Combine and interleave keywords, avoiding duplicates
+  const combined = [];
+  const maxLen = Math.max(usKeywords.length, ukKeywords.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < usKeywords.length && !combined.includes(usKeywords[i])) {
+      combined.push(usKeywords[i]);
+    }
+    if (i < ukKeywords.length && !combined.includes(ukKeywords[i])) {
+      combined.push(ukKeywords[i]);
+    }
   }
+
+  logger.info(`🔥 Combined US/UK Trends keywords (Top 5): ${combined.slice(0, 5).join(', ')}`);
+  return combined;
 }
 
 /**
  * Daily blog publisher job - Generates 1 post for each tab: geopolitics, energy, tech, sports
  */
-export async function dailyBlogPublisher(pb, loggerInstance) {
+export async function dailyBlogPublisher(pb, loggerInstance, targetCategory = null) {
   const activeLogger = loggerInstance || logger;
-  activeLogger.info('🚀 Starting Multi-Category Daily Blog Auto-Publishing Job');
+  activeLogger.info(`🚀 Starting Daily Blog Auto-Publishing Job (Category: ${targetCategory || 'All'})`);
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -119,7 +139,7 @@ export async function dailyBlogPublisher(pb, loggerInstance) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  const categories = ['geopolitics', 'energy', 'tech', 'sports'];
+  const categories = targetCategory ? [targetCategory] : ['geopolitics', 'energy', 'tech', 'sports'];
 
   for (const category of categories) {
     try {
@@ -172,48 +192,74 @@ export async function trendjackingPublisher(pb, loggerInstance) {
 
   try {
     const keywords = await getGoogleTrendsKeywords();
-    if (keywords.length < 2) {
-      activeLogger.warn('⚠️ Google Trends returned less than 2 keywords. Falling back to hot macro topics.');
-      keywords.push('Global Stock Market Fluctuations', 'Artificial Intelligence Regulation Shifts');
+    if (keywords.length === 0) {
+      activeLogger.warn('⚠️ Google Trends returned 0 keywords. Falling back to hot macro topics.');
+      keywords.push('Global Economic Outlook and Markets');
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     
-    // Select top 2 trending keywords
-    const selectedKeywords = keywords.slice(0, 2);
+    // Select the single most trending keyword
+    const keyword = keywords[0];
+    activeLogger.info(`📰 Selected trending keyword: "${keyword}"`);
 
-    for (let i = 0; i < selectedKeywords.length; i++) {
-      const keyword = selectedKeywords[i];
-      activeLogger.info(`📰 Generating trendjacking article for keyword #${i + 1}: "${keyword}"`);
+    // Check the last published trendjacking article
+    let lastArticle = null;
+    try {
+      const records = await pb.collection('blog_posts').getList(1, 1, {
+        filter: 'category = "trendjacking"',
+        sort: '-published_date',
+        $autoCancel: false
+      });
+      if (records.items.length > 0) {
+        lastArticle = records.items[0];
+      }
+    } catch (e) {
+      activeLogger.warn('No previous trendjacking articles found to check duplicate keywords.');
+    }
 
-      const prompt = `Generate a modern, highly engaging, and SEO-optimized news article (800+ words) about the trending global topic: "${keyword}".
-Focus on explaining why it is trending, what is happening right now, key facts, public sentiments, and its future implications.
+    const isSameKeyword = lastArticle && lastArticle.title.toLowerCase().includes(keyword.toLowerCase());
+    
+    let prompt;
+    if (isSameKeyword) {
+      activeLogger.info(`🔄 Keyword "${keyword}" is the same as the last article. Instructing AI to write a different follow-up article.`);
+      prompt = `Generate a modern, highly engaging, and SEO-optimized news article (1500+ words) about the trending global topic: "${keyword}".
+This topic has been trending all day, and we already published an initial report. Therefore, write a completely DIFFERENT follow-up article on "${keyword}". Focus on subsequent developments, public reaction, deeper analytical insights, and market/political sentiment. Do not repeat the same overview structure as the initial report.
+Return the result in JSON format only, structured exactly like:
+{
+  "title": "A catchy, follow-up news headline about ${keyword}",
+  "content": "Detailed article content in clean markdown formatting, structured as a news report with clear subheadings, analytical deep-dives, and bullet points."
+}
+Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
+    } else {
+      prompt = `Generate a modern, highly engaging, and SEO-optimized news article (1500+ words) about the trending global topic: "${keyword}".
+Focus on explaining why it is trending, what is happening right now, key facts, public/market sentiments, and its future implications.
 Return the result in JSON format only, structured exactly like:
 {
   "title": "A catchy, trendjacking news headline about ${keyword}",
-  "content": "Detailed article content in clean markdown formatting, structured as a news report with clear subheadings."
+  "content": "Detailed article content in clean markdown formatting, structured as a news report with clear subheadings, comprehensive paragraphs, and bullet points."
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
-
-      const result = await model.generateContent(prompt);
-      const responseText = result.response.text();
-      const parsed = parseAISubmission(responseText, `Breaking Trend: Latest on ${keyword}`);
-
-      const featuredImage = getCategoryFeaturedImage('trendjacking');
-
-      const record = await pb.collection('blog_posts').create({
-        title: parsed.title,
-        content: parsed.content,
-        category: 'trendjacking',
-        featured_image: featuredImage,
-        author: 'GTrends Trendjacking Feed',
-        status: 'published',
-        published_date: new Date().toISOString()
-      });
-
-      activeLogger.info(`✅ Successfully published trendjacking article #${i + 1}: "${parsed.title}" (ID: ${record.id})`);
     }
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    const parsed = parseAISubmission(responseText, `Breaking Trend: Latest on ${keyword}`);
+
+    const featuredImage = getCategoryFeaturedImage('trendjacking');
+
+    const record = await pb.collection('blog_posts').create({
+      title: parsed.title,
+      content: parsed.content,
+      category: 'trendjacking',
+      featured_image: featuredImage,
+      author: 'GTrends Trendjacking Feed',
+      status: 'published',
+      published_date: new Date().toISOString()
+    });
+
+    activeLogger.info(`✅ Successfully published trendjacking article: "${parsed.title}" (ID: ${record.id})`);
   } catch (err) {
     activeLogger.error('❌ Failed to run trendjacking publisher job:', err.message);
   }
