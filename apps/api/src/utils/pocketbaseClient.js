@@ -34,10 +34,13 @@ pocketbaseClient.beforeSend = async function (url, options) {
         return { url, options };
     }
 
+    const adminEmail = process.env.PB_SUPERUSER_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL || "admin@gtrendsnow.com";
+    const adminPassword = process.env.PB_SUPERUSER_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD || "SecureAdminPass123!";
+
     if (!pocketbaseClient.authStore.isValid && !authPromise) {
         authPromise = pocketbaseClient.collection('_superusers').authWithPassword(
-            process.env.PB_SUPERUSER_EMAIL,
-            process.env.PB_SUPERUSER_PASSWORD,
+            adminEmail,
+            adminPassword,
         ).finally(() => {
             authPromise = null;
         });
@@ -59,10 +62,13 @@ pocketbaseClient.beforeSend = async function (url, options) {
     try {
         await waitForHealth();
 
+        const adminEmail = process.env.PB_SUPERUSER_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL || "admin@gtrendsnow.com";
+        const adminPassword = process.env.PB_SUPERUSER_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD || "SecureAdminPass123!";
+
         if (!pocketbaseClient.authStore.isValid && !authPromise) {
             authPromise = pocketbaseClient.collection('_superusers').authWithPassword(
-                process.env.PB_SUPERUSER_EMAIL,
-                process.env.PB_SUPERUSER_PASSWORD,
+                adminEmail,
+                adminPassword,
             ).finally(() => {
                 authPromise = null;
             });
