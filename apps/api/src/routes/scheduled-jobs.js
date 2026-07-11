@@ -314,7 +314,7 @@ router.get('/status', (req, res) => {
 });
 
 // Manual trigger endpoints for testing
-router.post('/trigger-daily-blog', async (req, res) => {
+router.get('/trigger-daily-blog', async (req, res) => {
   logger.info('🚀 Manually triggering daily blog job');
   try {
     await dailyBlogPublisher(pb, logger);
@@ -325,7 +325,7 @@ router.post('/trigger-daily-blog', async (req, res) => {
   }
 });
 
-router.post('/trigger-trendjacking', async (req, res) => {
+router.get('/trigger-trendjacking', async (req, res) => {
   logger.info('🚀 Manually triggering trendjacking job');
   try {
     await trendjackingPublisher(pb, logger);
@@ -336,7 +336,7 @@ router.post('/trigger-trendjacking', async (req, res) => {
   }
 });
 
-router.post('/trigger-weekly-newsletter', async (req, res) => {
+router.get('/trigger-weekly-newsletter', async (req, res) => {
   logger.info('🚀 Manually triggering weekly newsletter job');
   try {
     const adminToken = await getAdminAuthToken(logger);
