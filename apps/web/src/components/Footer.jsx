@@ -5,6 +5,7 @@ import { Zap, Mail, ShieldAlert } from 'lucide-react';
 const Footer = () => {
   const quickLinks = [
     { path: '/', label: 'Home' },
+    { path: '/resume-builder', label: 'CV Builder' },
     { path: '/wealth', label: 'Wealth Tools' },
     { path: '/credit', label: 'Credit Optimizer' },
     { path: '/creator', label: 'Creator Tools' },
