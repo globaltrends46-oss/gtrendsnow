@@ -1,3 +1,7 @@
+import { spawn } from 'child_process';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -13,6 +17,47 @@ import logger from './utils/logger.js';
 import { BodyLimit } from './constants/common.js';
 import { dailyBlogPublisher, trendjackingPublisher, weeklyNewsletter } from './jobs/index.js';
 import pb from './utils/pocketbaseClient.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function startPocketBase() {
+  console.log('📦 Launching PocketBase directly from API main.js startup...');
+  const pbPath = path.resolve(__dirname, '../../pocketbase/pocketbase');
+  
+  try {
+    if (fs.existsSync(pbPath)) {
+      fs.chmodSync(pbPath, '755');
+      console.log('✅ PocketBase execution rights verified in main.js');
+    }
+  } catch (e) {
+    console.error('⚠️ Failed to chmod pocketbase in main.js:', e.message);
+  }
+
+  const pbProcess = spawn('./pocketbase', [
+    'serve',
+    '--http=127.0.0.1:8090',
+    '--dir=./pb_data',
+    '--migrationsDir=./pb_migrations',
+    '--hooksDir=./pb_hooks',
+    '--hooksWatch=false'
+  ], {
+    cwd: path.resolve(__dirname, '../../pocketbase'),
+    stdio: 'inherit',
+    shell: true
+  });
+
+  pbProcess.on('error', (err) => {
+    console.error('❌ Failed to start PocketBase process from main.js:', err);
+  });
+
+  pbProcess.on('exit', (code) => {
+    console.log(`⚠️ PocketBase exited from main.js with code ${code}`);
+  });
+}
+
+// Spin up PocketBase database background instance
+startPocketBase();
 
 const app = express();
 
