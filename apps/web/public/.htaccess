@@ -1,13 +1,3 @@
-# DO NOT REMOVE OR MODIFY. Doing so will break the Node.js application.
-<IfModule mod_passenger.c>
-    PassengerAppEnv production
-    PassengerAppRoot "/home/u516356423/public_html"
-    PassengerBaseURI "/hcgi"
-    PassengerNodejs "/home/u516356423/nodevenv/public_html/22/bin/node"
-    PassengerAppType node
-    PassengerStartupFile "index.js"
-</IfModule>
-
 <IfModule mod_rewrite.c>
 	RewriteEngine On
 	RewriteBase /
