@@ -56,8 +56,12 @@ function startPocketBase() {
   });
 }
 
-// Spin up PocketBase database background instance
-startPocketBase();
+// Spin up PocketBase database background instance if not already spawned by parent
+if (process.env.POCKETBASE_ALREADY_SPAWNED !== 'true') {
+  startPocketBase();
+} else {
+  console.log('✅ PocketBase already spawned by parent entry point');
+}
 
 const app = express();
 

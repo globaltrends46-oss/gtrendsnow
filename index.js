@@ -44,6 +44,7 @@ pbProcess.on('exit', (code) => {
 
 // 3. Start the Express API Server
 console.log('⚡ Launching API Server...');
+process.env.POCKETBASE_ALREADY_SPAWNED = 'true';
 import('./apps/api/src/main.js').then(() => {
   console.log('✅ Express API module loaded successfully');
 }).catch(err => {
