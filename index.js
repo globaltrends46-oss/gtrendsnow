@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import './apps/api/src/main.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,14 +39,4 @@ pbProcess.unref();
 
 pbProcess.on('error', (err) => {
   console.error('❌ Failed to start PocketBase process:', err);
-});
-
-// 3. Start the Express API Server
-console.log('⚡ Launching API Server...');
-process.env.POCKETBASE_ALREADY_SPAWNED = 'true';
-import('./apps/api/src/main.js').then(() => {
-  console.log('✅ Express API module loaded successfully');
-}).catch(err => {
-  console.error('❌ Failed to load Express API module:', err);
-  process.exit(1);
 });
