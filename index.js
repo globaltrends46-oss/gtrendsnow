@@ -30,16 +30,14 @@ const pbProcess = spawn('./pocketbase', [
   '--hooksWatch=false'
 ], {
   cwd: path.resolve(__dirname, 'apps/pocketbase'),
-  stdio: 'inherit',
-  shell: true
+  stdio: 'ignore',
+  detached: true
 });
+
+pbProcess.unref();
 
 pbProcess.on('error', (err) => {
   console.error('❌ Failed to start PocketBase process:', err);
-});
-
-pbProcess.on('exit', (code) => {
-  console.log(`⚠️ PocketBase process exited with code ${code}`);
 });
 
 // 3. Start the Express API Server
