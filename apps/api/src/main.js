@@ -1,4 +1,21 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Root directory is 4 levels up: apps/api/src/main.js -> src -> api -> apps -> root
+const logFile = path.resolve(__dirname, '../../../..', 'debug.log');
+
+function logToFile(msg) {
+  try {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] [main.js] ${msg}\n`);
+  } catch (e) {}
+}
+
+logToFile('⚡ main.js execution started...');
+
 dotenv.config();
 import express from 'express';
 import cors from 'cors';
@@ -110,7 +127,9 @@ logger.info('Weekly newsletter job scheduled (Monday 9 AM UTC)');
 
 const port = process.env.PORT || 3001;
 
+logToFile(`📡 Calling app.listen on port: ${port}`);
 app.listen(port, () => {
+	logToFile(`🚀 API Server running on port: ${port}`);
 	logger.info(`🚀 API Server running on http://localhost:${port}`);
 });
 

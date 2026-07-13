@@ -2,26 +2,34 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import './apps/api/src/main.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const logFile = path.resolve(__dirname, 'debug.log');
 
-console.log('🚀 Starting Unified Production Entry Point (index.js)...');
+function logToFile(msg) {
+  try {
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch (e) {}
+}
+
+logToFile('🚀 Starting Unified Production Entry Point (index.js)...');
 
 // 1. Verify/Set execution rights for PocketBase binary
 try {
   const pbPath = path.resolve(__dirname, 'apps/pocketbase/pocketbase');
   if (fs.existsSync(pbPath)) {
     fs.chmodSync(pbPath, '755');
-    console.log('✅ PocketBase execution permissions set');
+    logToFile('✅ PocketBase execution permissions set');
+  } else {
+    logToFile('⚠️ PocketBase binary NOT found at: ' + pbPath);
   }
 } catch (err) {
-  console.error('⚠️ Failed to chmod pocketbase:', err.message);
+  logToFile('⚠️ Failed to chmod pocketbase: ' + err.message);
 }
 
 // 2. Start PocketBase process
-console.log('📦 Launching PocketBase database server...');
+logToFile('📦 Launching PocketBase database server...');
 const pbProcess = spawn('./pocketbase', [
   'serve',
   '--http=127.0.0.1:8090',
@@ -38,5 +46,15 @@ const pbProcess = spawn('./pocketbase', [
 pbProcess.unref();
 
 pbProcess.on('error', (err) => {
-  console.error('❌ Failed to start PocketBase process:', err);
+  logToFile('❌ Failed to start PocketBase process: ' + err.message);
 });
+
+// 3. Start the Express API Server
+logToFile('⚡ Importing main.js (Express API server)...');
+import('./apps/api/src/main.js')
+  .then(() => {
+    logToFile('✅ main.js loaded successfully!');
+  })
+  .catch((err) => {
+    logToFile('❌ Failed to load main.js: ' + err.message + '\n' + err.stack);
+  });
