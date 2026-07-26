@@ -33,13 +33,17 @@ const ArticleDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchArticle = async () => {
       try {
         setLoading(true);
+
+        // 1. Check fallback IDs
         if (id && id.startsWith('fb-')) {
           const fbArt = fallbackArticles.find(a => a.id === id);
           if (fbArt) {
             setArticle(fbArt);
+            setLoading(false);
             return;
           }
         }
@@ -48,21 +52,59 @@ const ArticleDetailPage = () => {
           const fbBlog = allBlogPosts.find(a => a.id === id);
           if (fbBlog) {
             setArticle(fbBlog);
+            setLoading(false);
             return;
           }
         }
-        // Fetch article by ID from pocketbase blog_posts collection
-        const record = await pb.collection('blog_posts').getOne(id, { $autoCancel: false });
-        setArticle(record);
+
+        // 2. Check local storage caches
+        try {
+          const artCache = localStorage.getItem('gtrends_articles_cache');
+          if (artCache) {
+            const parsed = JSON.parse(artCache);
+            const found = parsed.find(a => a.id === id);
+            if (found) {
+              setArticle(found);
+              setLoading(false);
+              return;
+            }
+          }
+
+          ['geopolitics', 'energy', 'tech', 'sports'].forEach(cat => {
+            const blogCache = localStorage.getItem(`gtrends_blog_cache_${cat}`);
+            if (blogCache) {
+              const parsed = JSON.parse(blogCache);
+              const found = parsed.find(a => a.id === id);
+              if (found) {
+                setArticle(found);
+                setLoading(false);
+                return;
+              }
+            }
+          });
+        } catch (e) {}
+
+        // 3. Fetch article by ID from PocketBase with a 3-second timeout
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+        );
+
+        const pbPromise = pb.collection('blog_posts').getOne(id, { $autoCancel: false, requestKey: null });
+        const record = await Promise.race([pbPromise, timeoutPromise]);
+
+        if (isMounted && record) {
+          setArticle(record);
+        }
       } catch (error) {
-        console.error('Error fetching local article details:', error);
+        console.warn('Error/timeout fetching article details:', error.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchArticle();
     window.scrollTo(0, 0);
+    return () => { isMounted = false; };
   }, [id]);
 
   if (loading) {

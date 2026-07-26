@@ -9,35 +9,49 @@ import { Tag, Calendar, User, Clock } from 'lucide-react';
 import { fallbackArticles } from '@/lib/fallbackData.js';
 
 const ArticlesPage = () => {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState(() => {
+    try {
+      const cached = localStorage.getItem('gtrends_articles_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return fallbackArticles;
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchArticles = async () => {
       try {
-        setLoading(true);
-        // Query local trendjacking articles
-        const records = await pb.collection('blog_posts').getList(1, 20, {
+        // Create 3-second timeout for PocketBase network query
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+        );
+
+        const pbPromise = pb.collection('blog_posts').getList(1, 20, {
           filter: 'category = "trendjacking"',
           sort: '-published_date',
-          $autoCancel: false
+          $autoCancel: false,
+          requestKey: null
         });
 
-        if (records.items.length > 0) {
+        const records = await Promise.race([pbPromise, timeoutPromise]);
+
+        if (isMounted && records?.items?.length > 0) {
           setArticles(records.items);
-        } else {
-          // If no local trendjacking articles exist yet, use fallback
-          setArticles(fallbackArticles);
+          localStorage.setItem('gtrends_articles_cache', JSON.stringify(records.items));
         }
       } catch (err) {
-        console.error('Error fetching trendjacking articles, using fallback:', err);
-        setArticles(fallbackArticles);
+        console.warn('PocketBase fetch bypassed, retaining current articles:', err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchArticles();
+    return () => { isMounted = false; };
   }, []);
 
   return (

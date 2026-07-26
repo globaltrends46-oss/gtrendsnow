@@ -18,21 +18,47 @@ const TABS = [
 
 const BlogPage = () => {
   const [activeTab, setActiveTab] = useState(TABS[0].id);
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`gtrends_blog_cache_${TABS[0].id}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return fallbackBlogPosts[TABS[0].id] || [];
+  });
+  const [loading, setLoading] = useState(false);
 
   const fetchArticlesByCategory = async (category) => {
-    setLoading(true);
-    setArticles([]);
-    
+    // 1. Immediately set from cache or fallback data to eliminate skeleton delays
+    let initialData = fallbackBlogPosts[category] || [];
     try {
-      const records = await pb.collection('blog_posts').getList(1, 20, {
+      const cached = localStorage.getItem(`gtrends_blog_cache_${category}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) initialData = parsed;
+      }
+    } catch (e) {}
+
+    setArticles(initialData);
+
+    // 2. Query PocketBase with a strict 3-second timeout in background
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+      );
+
+      const pbPromise = pb.collection('blog_posts').getList(1, 20, {
         filter: `category = "${category}"`,
         sort: '-published_date',
-        $autoCancel: false
+        $autoCancel: false,
+        requestKey: null
       });
 
-      if (records.items.length > 0) {
+      const records = await Promise.race([pbPromise, timeoutPromise]);
+
+      if (records?.items?.length > 0) {
         const mapped = records.items.map(record => ({
           id: record.id,
           title: record.title,
@@ -43,12 +69,10 @@ const BlogPage = () => {
           link: `/blog/${record.id}`
         }));
         setArticles(mapped);
-      } else {
-        setArticles(fallbackBlogPosts[category] || []);
+        localStorage.setItem(`gtrends_blog_cache_${category}`, JSON.stringify(mapped));
       }
     } catch (err) {
-      console.error("Error fetching local articles, using fallback:", err);
-      setArticles(fallbackBlogPosts[category] || []);
+      console.warn("Live blog fetch bypassed, retaining current posts:", err.message);
     } finally {
       setLoading(false);
     }
