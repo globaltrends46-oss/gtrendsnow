@@ -169,12 +169,19 @@ export async function dailyBlogPublisher(pb, loggerInstance, targetCategory = nu
     try {
       activeLogger.info(`📝 Generating blog post for category: ${category}`);
 
-      const prompt = `Generate a comprehensive, SEO-optimized, highly engaging blog article (1500+ words) about the latest developments and trends in ${category}.
-Include data points, expert analysis, and actionable insights.
+      const prompt = `You are a world-class investigative journalist and industry analyst writing for GTrends Global. Write an extensive, highly engaging, publication-grade, long-form blog article (1500+ words) analyzing the latest developments, market shifts, and macro trends in ${category}.
+
+CRITICAL INSTRUCTIONS FOR CONTENT DEPTH:
+- Write comprehensive, multi-paragraph deep-dives under each heading. DO NOT write single-line summaries.
+- Structure with clear Markdown H2 (##) and H3 (###) section headers.
+- Include specific quantitative data points, percentage metrics, market projections, and real-world enterprise case studies.
+- Include bulleted analytical breakdowns and actionable executive takeaways.
+- Provide clear context so readers learn deep technical and strategic insights.
+
 Return the result in JSON format only, structured exactly like:
 {
-  "title": "A compelling title about ${category}",
-  "content": "Full detailed article body in clean markdown formatting, with sections, bullet points and detailed analysis."
+  "title": "A high-CTR, compelling headline about ${category}",
+  "content": "Full detailed article body in clean markdown formatting with multi-paragraph sections, bullet points, data tables, and deep analysis."
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
 
@@ -260,12 +267,18 @@ Return the result in JSON format only, structured exactly like:
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
     } else {
-      prompt = `Generate a modern, highly engaging, and SEO-optimized news article (1500+ words) about the trending global topic: "${keyword}".
-Focus on explaining why it is trending, what is happening right now, key facts, public/market sentiments, and its future implications.
+      prompt = `You are a senior investigative tech and economic journalist writing for GTrends Global. Write an extensive, highly engaging, publication-grade news report (1500+ words) about the trending global topic: "${keyword}".
+
+CRITICAL INSTRUCTIONS FOR CONTENT DEPTH:
+- Write comprehensive, multi-paragraph deep-dives under each heading. DO NOT write single-line summaries.
+- Focus on explaining why it is trending, what is happening right now, key background facts, market/public sentiment, and future strategic implications.
+- Structure with clear Markdown H2 (##) and H3 (###) section headers.
+- Include specific quantitative data points, percentage metrics, and expert analysis.
+
 Return the result in JSON format only, structured exactly like:
 {
-  "title": "A catchy, trendjacking news headline about ${keyword}",
-  "content": "Detailed article content in clean markdown formatting, structured as a news report with clear subheadings, comprehensive paragraphs, and bullet points."
+  "title": "A high-CTR, compelling news headline about ${keyword}",
+  "content": "Detailed article content in clean markdown formatting, structured as a news report with clear subheadings, comprehensive multi-paragraph sections, and bullet points."
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
     }
