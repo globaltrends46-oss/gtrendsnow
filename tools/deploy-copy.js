@@ -12,6 +12,7 @@ console.log('📦 Running deployment copy script...');
 const itemsToCopy = [
   { src: 'apps/api', dest: 'apps/api', filter: (src) => !src.includes('node_modules') },
   { src: 'apps/pocketbase', dest: 'apps/pocketbase', filter: (src) => !src.includes('pb_data') && !src.includes('pb_backups') },
+  { src: 'apps/web/public/sitemap.xml', dest: 'sitemap.xml' },
   { src: 'index.js', dest: 'index.js' },
   { src: 'package.json', dest: 'package.json' },
   { src: 'node_modules', dest: 'node_modules' }
