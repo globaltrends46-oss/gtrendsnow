@@ -123,7 +123,7 @@ const ArticlesPage = () => {
                             {article.title}
                           </h3>
                           <p className="text-[#94a3b8] text-sm leading-relaxed mt-2 line-clamp-3">
-                            {article.description || (article.content ? article.content.substring(0, 150).replace(/[#*]/g, '') + '...' : 'Tracking keyword variables across macro operational layers.')}
+                            {article.hookDescription || article.description || (article.content ? article.content.substring(0, 150).replace(/[#*]/g, '') + '...' : '')}
                           </p>
                         </Link>
 
