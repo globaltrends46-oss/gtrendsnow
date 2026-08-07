@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
+import { Route, Routes, BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import FloatingVaultBadge from './components/FloatingVaultBadge.jsx';
@@ -19,6 +19,26 @@ import CookiePolicyPage from './pages/CookiePolicyPage.jsx';
 import AffiliateDisclosurePage from './pages/AffiliateDisclosurePage.jsx';
 import DisclaimerPage from './pages/DisclaimerPage.jsx';
 
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    try {
+      fetch('/hcgi/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: location.pathname + location.search,
+          title: document.title,
+          referrer: document.referrer || 'direct'
+        })
+      }).catch(() => {});
+    } catch (e) {}
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -28,6 +48,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <AnalyticsTracker />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/wealth" element={<WealthPage />} />

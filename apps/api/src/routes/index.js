@@ -19,11 +19,13 @@ import generateJobDescriptionRouter from './generate-job-description.js';
 import generateCvRouter from './generate-cv.js';
 import integratedAiRouter from './integrated-ai.js';
 import generateVaultFilesRouter from './generate-vault-files.js';
+import analyticsRouter from './analytics.js';
 
 const router = Router();
 
 export default () => {
     router.get('/health', healthCheck);
+    router.use('/analytics', analyticsRouter);
     router.use('/test', testRouter);
     router.use('/vip-test', vipTestRouter);
     router.use('/vip-debug', vipDebugRouter);
