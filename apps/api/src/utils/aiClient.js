@@ -9,7 +9,7 @@ import logger from './logger.js';
 export async function generateTextWithAI(prompt, loggerInstance = null) {
   const activeLogger = loggerInstance || logger;
 
-  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNI_API_KEY || process.env.OPENROUTER_API_KEY)?.trim();
+  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_KEY || process.env.OMNI_API_KEY || process.env.OPENROUTER_API_KEY)?.trim();
   const omniBaseUrl = (process.env.OMNIROUTE_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
   const omniModel = process.env.OMNIROUTE_MODEL || 'google/gemini-2.5-flash' || 'openai/gpt-4o-mini';
 
