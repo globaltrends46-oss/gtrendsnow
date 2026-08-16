@@ -463,28 +463,18 @@ router.get('/trigger-weekly-newsletter', async (req, res) => {
 });
 
 // Manual trigger route for Trendjacking Articles
-router.all('/publish-trendjacking', async (req, res) => {
+router.all('/publish-trendjacking', (req, res) => {
   logger.info('⚡ Manual trigger received for Trendjacking Article Publisher');
-  try {
-    await trendjackingPublisher(pb, logger);
-    res.json({ success: true, message: 'Trendjacking Article Publisher job triggered successfully' });
-  } catch (err) {
-    logger.error('❌ Manual Trendjacking Article Publisher failed:', err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
+  res.json({ success: true, status: 'processing', message: 'Trendjacking Article Publisher launched asynchronously in background.' });
+  trendjackingPublisher(pb, logger).catch(err => logger.error('❌ Manual Trendjacking Article Publisher failed:', err.message));
 });
 
 // Manual trigger route for Category Blogs
-router.all('/publish-blog', async (req, res) => {
+router.all('/publish-blog', (req, res) => {
   logger.info('⚡ Manual trigger received for Daily Blog Publisher');
-  try {
-    const category = req.query.category || req.body?.category || null;
-    await dailyBlogPublisher(pb, logger, category);
-    res.json({ success: true, message: 'Daily Blog Publisher job triggered successfully', category: category || 'all' });
-  } catch (err) {
-    logger.error('❌ Manual Daily Blog Publisher failed:', err.message);
-    res.status(500).json({ success: false, error: err.message });
-  }
+  const category = req.query.category || req.body?.category || null;
+  res.json({ success: true, status: 'processing', message: `Daily Blog Publisher for category [${category || 'all'}] launched asynchronously in background.` });
+  dailyBlogPublisher(pb, logger, category).catch(err => logger.error('❌ Manual Daily Blog Publisher failed:', err.message));
 });
 
 export default router;
