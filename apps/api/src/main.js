@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// Root directory is 4 levels up: apps/api/src/main.js -> src -> api -> apps -> root
 const logFile = path.resolve(__dirname, '../../../..', 'debug.log');
 
 function logToFile(msg) {
@@ -22,6 +21,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cron from 'node-cron';
+import fetch from 'node-fetch';
 
 import routes from './routes/index.js';
 import { errorMiddleware } from './middleware/error.js';
@@ -35,7 +35,6 @@ const app = express();
 
 app.set('trust proxy', true);
 
-// Verify MESSAGE91_API_KEY is loaded
 if (process.env.MESSAGE91_API_KEY) {
 	console.log('✓ MESSAGE91_API_KEY loaded successfully');
 } else {
@@ -57,9 +56,7 @@ process.on('SIGINT', async () => {
 
 process.on('SIGTERM', async () => {
 	logger.info('SIGTERM signal received');
-
 	await new Promise(resolve => setTimeout(resolve, 3000));
-
 	logger.info('Exiting');
 	process.exit();
 });
@@ -88,38 +85,32 @@ app.use((req, res) => {
 	res.status(404).json({ error: 'Route not found' });
 });
 
-// Schedule daily blog jobs spread over time (every 6 hours) to prevent API key rate limiting
-// Geopolitics: 2 AM UTC
+// Schedule daily blog jobs spread over time
 cron.schedule('0 2 * * *', () => {
 	dailyBlogPublisher(pb, logger, 'geopolitics').catch(err => logger.error('Geopolitics daily blog job failed:', err));
 });
 logger.info('Geopolitics daily blog job scheduled (2 AM UTC)');
 
-// Energy & Markets: 8 AM UTC
 cron.schedule('0 8 * * *', () => {
 	dailyBlogPublisher(pb, logger, 'energy').catch(err => logger.error('Energy daily blog job failed:', err));
 });
 logger.info('Energy & Markets daily blog job scheduled (8 AM UTC)');
 
-// Tech & AI: 2 PM UTC
 cron.schedule('0 14 * * *', () => {
 	dailyBlogPublisher(pb, logger, 'tech').catch(err => logger.error('Tech daily blog job failed:', err));
 });
 logger.info('Tech & AI daily blog job scheduled (2 PM UTC)');
 
-// Sports & Culture: 8 PM UTC
 cron.schedule('0 20 * * *', () => {
 	dailyBlogPublisher(pb, logger, 'sports').catch(err => logger.error('Sports daily blog job failed:', err));
 });
 logger.info('Sports & Culture daily blog job scheduled (8 PM UTC)');
 
-// Schedule trendjacking articles twice daily (8 AM & 8 PM UTC) - Generates 1 premium article per run (2 daily total)
 cron.schedule('0 8,20 * * *', () => {
 	trendjackingPublisher(pb, logger).catch(err => logger.error('Trendjacking job failed:', err));
 });
 logger.info('Trendjacking publisher job scheduled (8 AM & 8 PM UTC)');
 
-// Schedule weekly newsletter job (Monday 9 AM UTC)
 cron.schedule('0 9 * * 1', () => {
 	weeklyNewsletter(pb, logger).catch(err => logger.error('Weekly newsletter job failed:', err));
 });
@@ -131,6 +122,17 @@ logToFile(`📡 Calling app.listen on port: ${port}`);
 app.listen(port, () => {
 	logToFile(`🚀 API Server running on port: ${port}`);
 	logger.info(`🚀 API Server running on http://localhost:${port}`);
+
+	// Anti-Sleep Heartbeat Keep-Alive Interval (pings server every 4 minutes to prevent Hostinger idle sleep)
+	setInterval(() => {
+		fetch(`http://127.0.0.1:${port}/hcgi/api/analytics/stats`).catch(() => {});
+	}, 4 * 60 * 1000);
+
+	// Automatic boot check: Trigger a trendjacking article run on server startup to verify publishing
+	setTimeout(() => {
+		logger.info('⚡ Running automatic startup trendjacking publisher check...');
+		trendjackingPublisher(pb, logger).catch(err => logger.warn('Startup publisher check status:', err.message));
+	}, 15000);
 });
 
 export default app;
