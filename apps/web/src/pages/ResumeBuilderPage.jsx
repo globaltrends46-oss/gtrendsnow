@@ -13,10 +13,13 @@ const ResumeBuilderPage = () => {
         <meta name="description" content="Optimize your resume for ATS systems using advanced Gemini AI. Choose layouts, colors, and download your professional resume as a PDF for free." />
       </Helmet>
 
-      <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="min-h-screen bg-[#070b14] text-foreground flex flex-col relative overflow-hidden">
+        <div className="absolute inset-0 cyber-grid opacity-60 pointer-events-none" />
+        <div className="mesh-glow-orb mesh-glow-1 opacity-30 pointer-events-none" />
+        <div className="mesh-glow-orb mesh-glow-2 opacity-25 pointer-events-none" />
         <Header />
         
-        <main className="flex-1 py-12">
+        <main className="flex-1 py-12 relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">

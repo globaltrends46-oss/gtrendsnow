@@ -21,15 +21,19 @@ const Header = () => {
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#070b14]/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <Link to="/" className="flex items-center gap-2.5 group transition-all">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 p-0.5 shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
                 <div className="w-full h-full bg-[#070b14] rounded-[10px] flex items-center justify-center">
-                  <LayoutDashboard className="w-5 h-5 text-indigo-400" />
+                  <LayoutDashboard className="w-5 h-5 text-indigo-400 group-hover:text-cyan-300 transition-colors" />
                 </div>
               </div>
               <span className="text-xl font-black tracking-tight gradient-text">GTrends<span className="text-cyan-400 font-bold text-xs uppercase tracking-widest ml-1">Global</span></span>
             </Link>
+            <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-semibold text-emerald-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span>AI System Live</span>
+            </div>
           </div>
 
           {/* Desktop Navigation */}
