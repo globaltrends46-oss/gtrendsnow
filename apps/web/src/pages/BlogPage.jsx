@@ -43,10 +43,44 @@ const BlogPage = () => {
 
     setArticles(initialData);
 
-    // 2. Query PocketBase with a strict 3-second timeout in background
+    // 2. Query Express posts API with fast timeout
     try {
+      let liveItems = null;
+      try {
+        const apiRes = await fetch(`/hcgi/api/posts?category=${category}`, { signal: AbortSignal.timeout(2500) });
+        if (apiRes.ok) {
+          const data = await apiRes.json();
+          if (Array.isArray(data.items) && data.items.length > 0) liveItems = data.items;
+        }
+      } catch (e) {
+        try {
+          const apiRes2 = await fetch(`/api/posts?category=${category}`, { signal: AbortSignal.timeout(2000) });
+          if (apiRes2.ok) {
+            const data2 = await apiRes2.json();
+            if (Array.isArray(data2.items) && data2.items.length > 0) liveItems = data2.items;
+          }
+        } catch (e2) {}
+      }
+
+      // If Express returned live items, map and update
+      if (liveItems && liveItems.length > 0) {
+        const mapped = liveItems.map(record => ({
+          id: record.id,
+          title: record.title,
+          description: record.content ? record.content.substring(0, 180).replace(/[#*]/g, '') + '...' : '',
+          urlToImage: record.featured_image,
+          source: { name: record.author || 'GTrends AI' },
+          publishedAt: record.published_date || record.created,
+          link: `/blog/${record.id}`
+        }));
+        setArticles(mapped);
+        localStorage.setItem(`gtrends_blog_cache_${category}`, JSON.stringify(mapped));
+        return;
+      }
+
+      // 3. Fallback: Query PocketBase in background
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+        setTimeout(() => reject(new Error('PocketBase request timeout')), 2500)
       );
 
       const pbPromise = pb.collection('blog_posts').getList(1, 20, {
@@ -72,7 +106,7 @@ const BlogPage = () => {
         localStorage.setItem(`gtrends_blog_cache_${category}`, JSON.stringify(mapped));
       }
     } catch (err) {
-      console.warn("Live blog fetch bypassed, retaining current posts:", err.message);
+      console.warn("Live blog network sync bypassed, retaining cached/fallback posts");
     } finally {
       setLoading(false);
     }

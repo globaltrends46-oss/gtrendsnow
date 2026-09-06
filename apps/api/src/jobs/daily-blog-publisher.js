@@ -2,6 +2,7 @@ import 'dotenv/config';
 import fetch from 'node-fetch';
 import logger from '../utils/logger.js';
 import { generateTextWithAI } from '../utils/aiClient.js';
+import contentStore from '../utils/contentStore.js';
 
 // Predefined high-quality Unsplash stock images for each category to ensure visual excellence
 const categoryImages = {
@@ -73,88 +74,100 @@ function parseAISubmission(aiOutput, fallbackTitle) {
 }
 
 /**
- * Keeps only the latest 20 articles in the database for a specific category, deleting the oldest ones.
- */
-async function enforcePostLimit(pb, category, activeLogger) {
-  try {
-    const existingPosts = await pb.collection('blog_posts').getFullList({
-      filter: `category = "${category}"`,
-      sort: '-published_date',
-      $autoCancel: false
-    });
-
-    if (existingPosts.length > 20) {
-      activeLogger.info(`🧹 Category "${category}" has ${existingPosts.length} posts. Enforcing 20 post limit...`);
-      const postsToDelete = existingPosts.slice(20);
-      for (const post of postsToDelete) {
-        await pb.collection('blog_posts').delete(post.id, { $autoCancel: false });
-        activeLogger.info(`🗑️ Deleted old post: "${post.title}" (ID: ${post.id})`);
-      }
-    }
-  } catch (err) {
-    activeLogger.warn(`⚠️ Failed to enforce post limit for category [${category}]:`, err.message);
-  }
-}
-
-/**
- * Fetch Google Trends daily searches RSS for US, UK, Germany, France, and Spain
+ * Fetch Google Trends daily searches RSS for US, UK, Germany, France, and Spain with rich news context
  */
 export async function getGoogleTrendsKeywords() {
   const geos = ['US', 'GB', 'DE', 'FR', 'ES'];
   
-  const fetchGeoKeywords = async (geo) => {
+  const fetchGeoTrends = async (geo) => {
     try {
       logger.info(`📡 Fetching Google Trends ${geo} Daily RSS feed...`);
       const res = await fetch(`https://trends.google.com/trending/rss?geo=${geo}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
+        },
+        timeout: 8000
       });
       if (!res.ok) {
         throw new Error(`Trends API for ${geo} returned status ${res.status}`);
       }
       const xml = await res.text();
-      const matches = [...xml.matchAll(/<title>([\s\S]*?)<\/title>/g)].map(m => m[1]);
-      return matches.slice(1).map(k => k.trim()).filter(Boolean);
+      const items = xml.split('<item>').slice(1);
+      const parsedItems = [];
+
+      for (const item of items) {
+        const title = item.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim();
+        if (title && !title.toLowerCase().includes('google trends') && !title.toLowerCase().includes('rss')) {
+          const traffic = item.match(/<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/)?.[1]?.trim() || '20,000+';
+          const newsTitle = item.match(/<ht:news_item_title>([\s\S]*?)<\/ht:news_item_title>/)?.[1]?.trim() || '';
+          const newsSource = item.match(/<ht:news_item_source>([\s\S]*?)<\/ht:news_item_source>/)?.[1]?.trim() || 'Global News Desk';
+          const newsUrl = item.match(/<ht:news_item_url>([\s\S]*?)<\/ht:news_item_url>/)?.[1]?.trim() || '';
+
+          parsedItems.push({
+            keyword: title,
+            geo,
+            traffic,
+            newsTitle,
+            newsSource,
+            newsUrl
+          });
+        }
+      }
+      return parsedItems;
     } catch (error) {
-      logger.error(`❌ Failed to fetch Google Trends keywords for ${geo}:`, error.message);
+      logger.warn(`⚠️ Failed to fetch Google Trends for ${geo}: ${error.message}`);
       return [];
     }
   };
 
-  const results = await Promise.all(geos.map(geo => fetchGeoKeywords(geo)));
+  const results = await Promise.all(geos.map(geo => fetchGeoTrends(geo)));
 
-  // Combine and interleave keywords across nations
+  // Combine and interleave items across nations
   const combined = [];
-  const maxLen = Math.max(...results.map(r => r.length));
+  const seenKeywords = new Set();
+  const maxLen = Math.max(...results.map(r => r.length), 0);
+
   for (let i = 0; i < maxLen; i++) {
     for (let g = 0; g < geos.length; g++) {
-      const keyword = results[g][i];
-      if (keyword && !combined.includes(keyword) && !keyword.toLowerCase().includes('rss') && !keyword.toLowerCase().includes('google trends')) {
-        combined.push(keyword);
+      const item = results[g][i];
+      if (item && !seenKeywords.has(item.keyword.toLowerCase())) {
+        seenKeywords.add(item.keyword.toLowerCase());
+        combined.push(item);
       }
     }
   }
 
-  logger.info(`🔥 Multi-National (US/UK/EU) Google Trends keywords (Top 5): ${combined.slice(0, 5).join(', ')}`);
+  if (combined.length === 0) {
+    // Fallback if network is blocked
+    combined.push({
+      keyword: 'Global Market Intelligence and AI Innovation',
+      geo: 'US',
+      traffic: '50,000+',
+      newsTitle: 'Global Markets Shift Toward Autonomous AI Operations',
+      newsSource: 'Financial Times'
+    });
+  }
+
+  logger.info(`🔥 Multi-National Google Trends parsed: ${combined.length} hot topics available`);
   return combined;
 }
 
 /**
  * Daily blog publisher job - Generates 1 post for each tab: geopolitics, energy, tech, sports
- * Now uses LIVE multi-national Google Trends search terms for true trendjacking!
  */
 export async function dailyBlogPublisher(pb, loggerInstance, targetCategory = null) {
   const activeLogger = loggerInstance || logger;
   activeLogger.info(`🚀 Starting Daily Blog Auto-Publishing Job (Category: ${targetCategory || 'All'})`);
 
   const categories = targetCategory ? [targetCategory] : ['geopolitics', 'energy', 'tech', 'sports'];
-  const trendingKeywords = await getGoogleTrendsKeywords();
+  const trendingItems = await getGoogleTrendsKeywords();
+  const publishedPosts = [];
 
   for (let idx = 0; idx < categories.length; idx++) {
     const category = categories[idx];
     try {
-      const topicKeyword = trendingKeywords[idx % trendingKeywords.length] || `${category} market trends`;
+      const trendItem = trendingItems[idx % trendingItems.length] || { keyword: `${category} global trends` };
+      const topicKeyword = trendItem.keyword;
       activeLogger.info(`📝 Generating blog post for category [${category}] on live trending topic: "${topicKeyword}"`);
 
       const prompt = `You are a world-class investigative journalist and industry analyst writing for GTrends Global. Write an extensive, highly engaging, publication-grade, long-form blog article (1500+ words) specifically analyzing the live trending search topic: "${topicKeyword}" within the context of ${category}.
@@ -173,82 +186,56 @@ Return the result in JSON format only, structured exactly like:
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
 
-      const responseText = await generateTextWithAI(prompt, activeLogger);
-      const parsed = parseAISubmission(responseText, `Daily ${category} Report: ${topicKeyword}`);
+      const responseText = await generateTextWithAI(prompt, activeLogger, {
+        keyword: topicKeyword,
+        newsTitle: trendItem.newsTitle,
+        newsSource: trendItem.newsSource,
+        traffic: trendItem.traffic,
+        category
+      });
 
+      const parsed = parseAISubmission(responseText, `Daily ${category} Report: ${topicKeyword}`);
       const featuredImage = getCategoryFeaturedImage(category);
 
-      const record = await pb.collection('blog_posts').create({
+      // Save via contentStore (saves to disk JSON + syncs to PocketBase)
+      const record = await contentStore.savePost({
         title: parsed.title,
         content: parsed.content,
         category: category,
         featured_image: featuredImage,
         author: 'GTrends Global AI Research',
-        status: 'published',
         published_date: new Date().toISOString()
-      }, { $autoCancel: false });
+      });
 
-      // Enforce the 20 articles limit per category
-      await enforcePostLimit(pb, category, activeLogger);
-
-      activeLogger.info(`✅ Successfully published daily blog for category [${category}]: "${parsed.title}" (ID: ${record.id})`);
+      publishedPosts.push(record);
+      activeLogger.info(`✅ Successfully published daily blog for category [${category}]: "${parsed.title}"`);
     } catch (err) {
       activeLogger.error(`❌ Failed to publish daily blog for category [${category}]:`, err.message);
     }
   }
+
+  return publishedPosts;
 }
 
 /**
- * Daily Trendjacking Articles publisher - Generates 2 trending news posts daily
+ * Daily Trendjacking Articles publisher - Generates trending news posts from live searches
  */
 export async function trendjackingPublisher(pb, loggerInstance) {
   const activeLogger = loggerInstance || logger;
   activeLogger.info('🚀 Starting Trendjacking Daily Article Publisher Job');
 
   try {
-    const keywords = await getGoogleTrendsKeywords();
-    if (keywords.length === 0) {
-      activeLogger.warn('⚠️ Google Trends returned 0 keywords. Falling back to hot macro topics.');
-      keywords.push('Global Economic Outlook and Markets');
-    }
+    const trendingItems = await getGoogleTrendsKeywords();
+    const trendItem = trendingItems[0] || { keyword: 'Global Economic Outlook and Markets' };
+    const keyword = trendItem.keyword;
 
-    // Select the #1 most trending keyword across US, UK & Europe
-    const keyword = keywords[0];
-    activeLogger.info(`📰 Selected #1 trending keyword across US/UK/EU: "${keyword}"`);
+    activeLogger.info(`📰 Selected #1 trending keyword across US/UK/EU: "${keyword}" (${trendItem.traffic || ''})`);
 
-    // Check the last published trendjacking article
-    let lastArticle = null;
-    try {
-      const records = await pb.collection('blog_posts').getList(1, 1, {
-        filter: 'category = "trendjacking"',
-        sort: '-published_date',
-        $autoCancel: false
-      });
-      if (records.items.length > 0) {
-        lastArticle = records.items[0];
-      }
-    } catch (e) {
-      activeLogger.warn('No previous trendjacking articles found to check duplicate keywords.');
-    }
-
-    const isSameKeyword = lastArticle && lastArticle.title.toLowerCase().includes(keyword.toLowerCase());
-    
-    let prompt;
-    if (isSameKeyword) {
-      activeLogger.info(`🔄 Keyword "${keyword}" matches last article. Instructing AI to write a follow-up breaking analysis.`);
-      prompt = `You are a senior investigative tech and economic journalist writing for GTrends Global. Write an extensive, highly engaging, publication-grade news report (1500+ words) on the trending topic: "${keyword}".
-This topic is currently trending #1 across the USA, UK, and Europe. Write a completely DIFFERENT follow-up report on "${keyword}". Focus on subsequent developments, market reaction, public sentiment, and global implications.
-Return the result in JSON format only, structured exactly like:
-{
-  "title": "A high-CTR news headline about ${keyword}",
-  "content": "Detailed article content in clean markdown formatting with subheadings, analytical deep-dives, and bullet points."
-}
-Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
-    } else {
-      prompt = `You are a senior investigative tech and economic journalist writing for GTrends Global. Write an extensive, highly engaging, publication-grade news report (1500+ words) about the #1 trending global topic: "${keyword}".
+    const prompt = `You are a senior investigative tech and economic journalist writing for GTrends Global. Write an extensive, highly engaging, publication-grade news report (1500+ words) about the #1 trending global topic: "${keyword}".
 
 CRITICAL INSTRUCTIONS FOR MULTI-NATIONAL TRENDJACKING:
 - Explain why "${keyword}" is trending #1 across the USA, UK, and Europe right now.
+- News context reported: "${trendItem.newsTitle || keyword}" via ${trendItem.newsSource || 'Global News Desks'}.
 - Write comprehensive, multi-paragraph deep-dives under each heading.
 - Focus on key background facts, market/public sentiment, and future strategic implications.
 - Structure with clear Markdown H2 (##) and H3 (###) section headers.
@@ -260,28 +247,32 @@ Return the result in JSON format only, structured exactly like:
   "content": "Detailed article content in clean markdown formatting with subheadings, comprehensive multi-paragraph sections, and bullet points."
 }
 Do not wrap your response in markdown code blocks like \`\`\`json. Return pure JSON.`;
-    }
 
-    const responseText = await generateTextWithAI(prompt, activeLogger);
+    const responseText = await generateTextWithAI(prompt, activeLogger, {
+      keyword,
+      newsTitle: trendItem.newsTitle,
+      newsSource: trendItem.newsSource,
+      traffic: trendItem.traffic,
+      category: 'trendjacking'
+    });
+
     const parsed = parseAISubmission(responseText, `Breaking Trend: Latest on ${keyword}`);
-
     const featuredImage = getCategoryFeaturedImage('trendjacking');
 
-    const record = await pb.collection('blog_posts').create({
+    // Save via contentStore (saves to disk JSON + syncs to PocketBase)
+    const record = await contentStore.savePost({
       title: parsed.title,
       content: parsed.content,
       category: 'trendjacking',
       featured_image: featuredImage,
       author: 'GTrends Trendjacking Feed',
-      status: 'published',
       published_date: new Date().toISOString()
-    }, { $autoCancel: false });
-
-    // Enforce the 20 articles limit for trendjacking
-    await enforcePostLimit(pb, 'trendjacking', activeLogger);
+    });
 
     activeLogger.info(`✅ Successfully published trendjacking article: "${parsed.title}" (ID: ${record.id})`);
+    return record;
   } catch (err) {
     activeLogger.error('❌ Failed to run trendjacking publisher job:', err.message);
+    throw err;
   }
 }

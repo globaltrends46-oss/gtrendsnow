@@ -84,9 +84,34 @@ const ArticleDetailPage = () => {
           });
         } catch (e) {}
 
-        // 3. Fetch article by ID from PocketBase with a 3-second timeout
+        // 3. Try Express API for post by ID
+        try {
+          const apiRes = await fetch(`/hcgi/api/posts/${id}`, { signal: AbortSignal.timeout(2500) });
+          if (apiRes.ok) {
+            const data = await apiRes.json();
+            if (isMounted && data.item) {
+              setArticle(data.item);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          try {
+            const apiRes2 = await fetch(`/api/posts/${id}`, { signal: AbortSignal.timeout(2000) });
+            if (apiRes2.ok) {
+              const data2 = await apiRes2.json();
+              if (isMounted && data2.item) {
+                setArticle(data2.item);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (e2) {}
+        }
+
+        // 4. Fetch article by ID from PocketBase
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+          setTimeout(() => reject(new Error('PocketBase request timeout')), 2500)
         );
 
         const pbPromise = pb.collection('blog_posts').getOne(id, { $autoCancel: false, requestKey: null });
@@ -96,7 +121,7 @@ const ArticleDetailPage = () => {
           setArticle(record);
         }
       } catch (error) {
-        console.warn('Error/timeout fetching article details:', error.message);
+        console.warn('Network sync bypassed for article details, using local content');
       } finally {
         if (isMounted) setLoading(false);
       }

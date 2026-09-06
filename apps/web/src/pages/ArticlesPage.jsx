@@ -25,9 +25,35 @@ const ArticlesPage = () => {
     let isMounted = true;
     const fetchArticles = async () => {
       try {
-        // Create 3-second timeout for PocketBase network query
+        // 1. Try Express posts endpoint with fast timeout
+        try {
+          const apiRes = await fetch('/hcgi/api/posts?category=trendjacking', { signal: AbortSignal.timeout(2500) });
+          if (apiRes.ok) {
+            const data = await apiRes.json();
+            if (isMounted && Array.isArray(data.items) && data.items.length > 0) {
+              setArticles(data.items);
+              localStorage.setItem('gtrends_articles_cache', JSON.stringify(data.items));
+              return;
+            }
+          }
+        } catch (e) {
+          // Try /api/posts
+          try {
+            const apiRes2 = await fetch('/api/posts?category=trendjacking', { signal: AbortSignal.timeout(2000) });
+            if (apiRes2.ok) {
+              const data2 = await apiRes2.json();
+              if (isMounted && Array.isArray(data2.items) && data2.items.length > 0) {
+                setArticles(data2.items);
+                localStorage.setItem('gtrends_articles_cache', JSON.stringify(data2.items));
+                return;
+              }
+            }
+          } catch (e2) {}
+        }
+
+        // 2. Try PocketBase
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('PocketBase request timeout')), 3000)
+          setTimeout(() => reject(new Error('PocketBase request timeout')), 2500)
         );
 
         const pbPromise = pb.collection('blog_posts').getList(1, 20, {
@@ -44,7 +70,7 @@ const ArticlesPage = () => {
           localStorage.setItem('gtrends_articles_cache', JSON.stringify(records.items));
         }
       } catch (err) {
-        console.warn('PocketBase fetch bypassed, retaining current articles:', err.message);
+        console.warn('Network sync bypassed, retaining cached/fallback articles');
       } finally {
         if (isMounted) setLoading(false);
       }

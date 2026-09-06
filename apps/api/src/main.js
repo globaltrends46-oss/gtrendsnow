@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const logFile = path.resolve(__dirname, '../../../..', 'debug.log');
+// Root debug.log file
+const logFile = path.resolve(process.cwd(), 'debug.log');
 
 function logToFile(msg) {
   try {
@@ -63,7 +63,7 @@ process.on('SIGTERM', async () => {
 
 app.use(helmet());
 app.use(cors({
-	origin: process.env.CORS_ORIGIN,
+	origin: process.env.CORS_ORIGIN || true,
 	credentials: true,
 }));
 app.use(morgan('combined'));
@@ -76,8 +76,10 @@ app.use(express.urlencoded({
 	limit: BodyLimit,
 }));
 
-app.use('/', routes());
 app.use('/hcgi/api', routes());
+app.use('/hcgi', routes());
+app.use('/api', routes());
+app.use('/', routes());
 
 app.use(errorMiddleware);
 

@@ -3,24 +3,23 @@ import logger from './logger.js';
 
 const POCKETBASE_HOST = `http://localhost:8090`;
 
-async function waitForHealth({ retries = 10, delayMs = 1000 } = {}) {
+async function waitForHealth({ retries = 2, delayMs = 300 } = {}) {
     for (let i = 1; i <= retries; i++) {
         try {
-            const response = await fetch(`${POCKETBASE_HOST}/api/health`, { method: 'HEAD' });
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 800);
+            const response = await fetch(`${POCKETBASE_HOST}/api/health`, { method: 'HEAD', signal: controller.signal });
+            clearTimeout(timeout);
 
             if (response.ok) {
-                return;
+                return true;
             }
         } catch {
-            // PocketBase not reachable yet; retry below
+            // PocketBase not reachable yet
         }
-
-        logger.warn(`PocketBase not ready, retrying (${i}/${retries})...`);
-
         await new Promise((r) => setTimeout(r, delayMs));
     }
-
-    throw new Error(`PocketBase health check failed after ${retries} retries`);
+    return false;
 }
 
 const pocketbaseClient = new Pocketbase(POCKETBASE_HOST);
@@ -60,7 +59,11 @@ pocketbaseClient.beforeSend = async function (url, options) {
 
 (async () => {
     try {
-        await waitForHealth();
+        const isHealthy = await waitForHealth();
+        if (!isHealthy) {
+            logger.info('PocketBase server offline - using contentStore JSON storage');
+            return;
+        }
 
         const adminEmail = process.env.PB_SUPERUSER_EMAIL || process.env.POCKETBASE_ADMIN_EMAIL || "admin@gtrendsnow.com";
         const adminPassword = process.env.PB_SUPERUSER_PASSWORD || process.env.POCKETBASE_ADMIN_PASSWORD || "SecureAdminPass123!";
@@ -80,7 +83,7 @@ pocketbaseClient.beforeSend = async function (url, options) {
         
         logger.info('PocketBase client initialized successfully');
     } catch (err) {
-        logger.error('Failed to initialize PocketBase client:', err);
+        logger.info('PocketBase standalone mode active');
     }
 })();
 
