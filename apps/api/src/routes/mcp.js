@@ -167,9 +167,9 @@ router.get('/download/:id', async (req, res) => {
     }
 
     if (response && response.ok) {
-      const fileName = `${item.repo || item.id}.zip`;
+      const safeFileName = `${(item.repo || item.id).replace(/[^a-zA-Z0-9._-]/g, '')}.zip`;
       res.setHeader('Content-Type', 'application/zip');
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`);
       
       const contentLength = response.headers.get('content-length');
       if (contentLength) res.setHeader('Content-Length', contentLength);

@@ -62,11 +62,42 @@ process.on('SIGTERM', async () => {
 	process.exit();
 });
 
-app.use(helmet());
-app.use(cors({
-	origin: process.env.CORS_ORIGIN || true,
-	credentials: true,
+// Hardened Enterprise CORS Origin Validation
+const ALLOWED_ORIGINS = [
+  'https://gtrendsnow.com',
+  'https://www.gtrendsnow.com',
+  'https://gateway.gtrendsnow.com',
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(s => s.trim()) : [])
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost in development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+
+    if (ALLOWED_ORIGINS.some(allowed => origin === allowed || origin.endsWith('.gtrendsnow.com'))) {
+      return callback(null, true);
+    }
+
+    logger.warn(`🛑 Blocked unauthorized CORS origin attempt: ${origin}`);
+    callback(new Error('Blocked by CORS Security Policy'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'X-Title', 'HTTP-Referer'],
+  maxAge: 86400
+};
+
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+app.use(cors(corsOptions));
 app.use(morgan('combined'));
 app.use(globalRateLimit);
 app.use(express.json({

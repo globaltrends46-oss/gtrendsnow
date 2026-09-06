@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import healthCheck from './health-check.js';
 import testRouter from './test.js';
-import vipTestRouter from './vip-test.js';
-import vipDebugRouter from './vip-debug.js';
 import vipLoginRouter from './vip-login.js';
 import blogRouter from './blog.js';
 import affiliateRouter from './affiliate.js';
@@ -32,8 +30,6 @@ export default () => {
     router.use('/mcp', mcpRouter);
     router.use('/analytics', analyticsRouter);
     router.use('/test', testRouter);
-    router.use('/vip-test', vipTestRouter);
-    router.use('/vip-debug', vipDebugRouter);
     router.use('/vip-login', vipLoginRouter);
     router.use('/blog', blogRouter);
     router.use('/affiliate', affiliateRouter);

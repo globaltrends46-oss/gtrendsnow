@@ -5,8 +5,10 @@ import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import pb from '../utils/pocketbaseClient.js';
 import logger from '../utils/logger.js';
+import { loginRateLimit } from '../middleware/rate-limiters.js';
 
 const router = express.Router();
+router.use(loginRateLimit);
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const logFilePath = resolve(__dirname, '../../webhook_log.txt');
 
@@ -74,7 +76,9 @@ router.post('/', async (req, res) => {
 
   try {
     logger.info('  📡 Sending query to PocketBase...');
-    const record = await pb.collection('vip_users').getFirstListItem(`email="${normalizedEmail}"`);
+    const record = await pb.collection('vip_users').getFirstListItem(
+      pb.filter('email = {:email}', { email: normalizedEmail })
+    );
 
     // ============================================================
     // STEP 5: Record found - log details

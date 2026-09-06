@@ -74,14 +74,28 @@ router.post('/track', async (req, res) => {
       memoryAnalytics.keywordCounts[keyword] = (memoryAnalytics.keywordCounts[keyword] || 0) + 1;
     }
 
+function anonymizeIp(ip) {
+  if (!ip) return '0.0.0.0';
+  const cleanIp = String(ip).trim();
+  if (cleanIp.includes('.')) {
+    const parts = cleanIp.split('.');
+    if (parts.length === 4) parts[3] = 'xxx';
+    return parts.join('.');
+  }
+  if (cleanIp.includes(':')) {
+    const parts = cleanIp.split(':');
+    return parts.slice(0, 3).join(':') + '::xxxx';
+  }
+  return 'anonymized';
+}
+
     const hit = {
       path: pagePath,
       title: title || pagePath,
       country: country,
       referrer: refDomain,
       keyword: keyword || 'direct',
-      userAgent: req.headers['user-agent'] || '',
-      ip: req.ip || '',
+      ip: anonymizeIp(req.ip || req.headers['x-forwarded-for']),
       timestamp: new Date().toISOString()
     };
 
@@ -102,7 +116,7 @@ router.post('/track', async (req, res) => {
   }
 });
 
-// Full Analytics Report Endpoint
+// Full Analytics Report Endpoint (Sanitized - Zero Personal Data)
 router.get('/stats', async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
@@ -150,10 +164,17 @@ router.get('/stats', async (req, res) => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10)
         .map(([label, count]) => ({ event: label, clicks: count })),
-      recentHits: memoryAnalytics.recentHits.slice(0, 5)
+      recentHits: memoryAnalytics.recentHits.slice(0, 5).map(h => ({
+        path: h.path,
+        title: h.title,
+        country: h.country,
+        referrer: h.referrer,
+        keyword: h.keyword,
+        timestamp: h.timestamp
+      }))
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to retrieve analytics summary' });
   }
 });
 

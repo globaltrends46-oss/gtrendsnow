@@ -2,8 +2,10 @@ import 'dotenv/config';
 import express from 'express';
 import logger from '../utils/logger.js';
 import { generateTextWithAI } from '../utils/aiClient.js';
+import { aiRateLimit } from '../middleware/rate-limiters.js';
 
 const router = express.Router();
+router.use(aiRateLimit);
 
 /**
  * POST /generate-cv - Generate or update professional CV/resume with ATS audit
@@ -22,29 +24,40 @@ router.post('/', async (req, res) => {
     certifications,
     currentCvText,
     modificationDirections
-  } = req.body;
+  } = req.body || {};
 
-  const candidateName = (name || 'Professional Candidate').trim();
-  const isModification = mode === 'modify' || (currentCvText && currentCvText.length > 50);
+  // Input Sanitization & Length Caps (Defends against prompt-stuffing & memory exhaustion)
+  const candidateName = String(name || 'Professional Candidate').trim().slice(0, 100);
+  const cleanCurrentCv = String(currentCvText || '').trim().slice(0, 15000);
+  const cleanDirections = String(modificationDirections || '').trim().slice(0, 2000);
+  const cleanTargetTitle = String(targetJobTitle || '').trim().slice(0, 150);
+  const cleanJobDesc = String(targetJobDescription || '').trim().slice(0, 5000);
+  const cleanExperience = String(experience || '').trim().slice(0, 10000);
+  const cleanSkills = String(skills || '').trim().slice(0, 3000);
+  const cleanEducation = String(education || '').trim().slice(0, 3000);
+  const cleanAchievements = String(achievements || '').trim().slice(0, 3000);
+  const cleanCertifications = String(certifications || '').trim().slice(0, 3000);
+
+  const isModification = mode === 'modify' || (cleanCurrentCv && cleanCurrentCv.length > 50);
 
   logger.info('📄 Advanced CV request received', {
     mode: isModification ? 'modify' : 'new',
     name: candidateName,
-    targetJobTitle: targetJobTitle || 'Not specified',
-    hasExistingCV: !!currentCvText,
-    directionsLength: modificationDirections ? modificationDirections.length : 0,
+    targetJobTitle: cleanTargetTitle || 'Not specified',
+    hasExistingCV: !!cleanCurrentCv,
+    directionsLength: cleanDirections ? cleanDirections.length : 0,
     timestamp: new Date().toISOString(),
   });
 
   // Validation: Ensure either existing CV text or experience is provided
-  if (!isModification && !experience && !skills) {
+  if (!isModification && !cleanExperience && !cleanSkills) {
     return res.status(400).json({
       success: false,
       error: 'Please provide either your work experience/skills or upload an existing CV.'
     });
   }
 
-  if (isModification && !currentCvText) {
+  if (isModification && !cleanCurrentCv) {
     return res.status(400).json({
       success: false,
       error: 'Please provide or upload your existing CV text to update it.'
@@ -58,14 +71,14 @@ router.post('/', async (req, res) => {
 The user has uploaded their existing CV and provided explicit modification directions. Your job is to rewrite, modernize, and enhance their CV into a flawless, publication-grade, ATS-friendly document.
 
 === EXISTING CV CONTENT ===
-${currentCvText}
+${cleanCurrentCv}
 
 === USER'S MODIFICATION DIRECTIONS ===
-${modificationDirections ? modificationDirections : 'Enhance professional impact, maximize ATS score, and strengthen action verbs and quantifiable metrics.'}
+${cleanDirections ? cleanDirections : 'Enhance professional impact, maximize ATS score, and strengthen action verbs and quantifiable metrics.'}
 
 === TARGET JOB (IF SPECIFIED) ===
-Target Title: ${targetJobTitle || 'Inferred from CV'}
-Target Job Description: ${targetJobDescription || 'Standard industry best practices'}
+Target Title: ${cleanTargetTitle || 'Inferred from CV'}
+Target Job Description: ${cleanJobDesc || 'Standard industry best practices'}
 
 CRITICAL ATS REQUIREMENTS & RULES:
 1. Incorporate every modification direction requested by the user.
@@ -98,13 +111,13 @@ Build a brand new, highly competitive, ATS-compliant CV from scratch based on th
 
 === USER PROFILE DETAILS ===
 Candidate Name: ${candidateName}
-Target Job Title: ${targetJobTitle || 'Experienced Specialist'}
-Target Job Description: ${targetJobDescription || 'Standard professional industry standards'}
-Experience History: ${experience || 'Extensive professional track record in target domain'}
-Core Skills: ${skills || 'Strategic Planning, Execution, Cross-functional Leadership'}
-Education: ${education || 'Bachelor Degree in Relevant Discipline'}
-Key Achievements: ${achievements || 'Recognized for top performance and reliable delivery'}
-Certifications: ${certifications || 'Industry Certified'}
+Target Job Title: ${cleanTargetTitle || 'Experienced Specialist'}
+Target Job Description: ${cleanJobDesc || 'Standard professional industry standards'}
+Experience History: ${cleanExperience || 'Extensive professional track record in target domain'}
+Core Skills: ${cleanSkills || 'Strategic Planning, Execution, Cross-functional Leadership'}
+Education: ${cleanEducation || 'Bachelor Degree in Relevant Discipline'}
+Key Achievements: ${cleanAchievements || 'Recognized for top performance and reliable delivery'}
+Certifications: ${cleanCertifications || 'Industry Certified'}
 
 CRITICAL ATS REQUIREMENTS & RULES:
 1. Structure with standard, single-column ATS headings:

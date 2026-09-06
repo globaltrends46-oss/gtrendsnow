@@ -1,7 +1,10 @@
 import express from 'express';
 import logger from '../utils/logger.js';
+import { otpRateLimit } from '../middleware/rate-limiters.js';
 
 const router = express.Router();
+router.use('/send-otp', otpRateLimit);
+router.use('/send', otpRateLimit);
 
 // Validate phone format: +91 followed by exactly 10 digits
 const validatePhoneFormat = (phone) => {

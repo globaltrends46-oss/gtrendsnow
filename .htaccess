@@ -7,3 +7,53 @@
     PassengerAppType node
     PassengerStartupFile "index.js"
 </IfModule>
+
+# ==============================================================================
+# GTRENDS GLOBAL - ENTERPRISE SECURITY HARDENING
+# ==============================================================================
+
+# 1. Prevent Directory Browsing
+Options -Indexes
+
+# 2. Block Direct Access to Hidden and Sensitive System Files (.env, .git, etc.)
+<FilesMatch "^\.|\.(env|sqlite|db|log|lock|sh|md|yml|yaml)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 3. Block Direct Public HTTP Download of Server Source/Configuration Files
+<FilesMatch "^(package\.json|package-lock\.json|index\.js|webhook_log\.txt|debug\.log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# 4. Explicitly Allow Public Search Engine and Web Verification Files
+<FilesMatch "^(sitemap\.xml|ads\.txt|robots\.txt|index\.html)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# 5. Enterprise HTTP Security Headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+

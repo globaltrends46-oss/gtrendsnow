@@ -41,7 +41,9 @@ router.post('/', async (req, res) => {
     // Try vip_customers collection first
     if (userEmail) {
       try {
-        vipRecord = await pb.collection('vip_customers').getFirstListItem(`email="${userEmail}"`);
+        vipRecord = await pb.collection('vip_customers').getFirstListItem(
+          pb.filter('email = {:email}', { email: userEmail })
+        );
         if (vipRecord && vipRecord.status === 'active') {
           isVip = true;
           logger.info('✅ VIP status verified via vip_customers', { email: userEmail, status: vipRecord.status });
@@ -54,7 +56,9 @@ router.post('/', async (req, res) => {
     // Try vip_users collection if not found in vip_customers
     if (!isVip && userEmail) {
       try {
-        vipRecord = await pb.collection('vip_users').getFirstListItem(`email="${userEmail}"`);
+        vipRecord = await pb.collection('vip_users').getFirstListItem(
+          pb.filter('email = {:email}', { email: userEmail })
+        );
         if (vipRecord && vipRecord.status === 'active') {
           isVip = true;
           logger.info('✅ VIP status verified via vip_users', { email: userEmail, status: vipRecord.status });

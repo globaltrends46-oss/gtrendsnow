@@ -50,7 +50,9 @@ router.post('/', async (req, res) => {
     // Check if user already exists
     let existingUser = null;
     try {
-      existingUser = await pb.collection('vip_users').getFirstListItem(`email="${normalizedEmail}"`);
+      existingUser = await pb.collection('vip_users').getFirstListItem(
+        pb.filter('email = {:email}', { email: normalizedEmail })
+      );
       logger.info('✅ Existing VIP user found', { userId: existingUser.id });
     } catch (error) {
       if (error.message.includes('Failed to find record')) {

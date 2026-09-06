@@ -313,8 +313,27 @@ router.get('/status', (req, res) => {
   });
 });
 
-// Manual trigger endpoints for testing
-router.get('/trigger-daily-blog', async (req, res) => {
+// Admin Authorization Middleware for manual trigger endpoints
+const requireAdminSecret = (req, res, next) => {
+  const secret = process.env.ADMIN_SECRET_KEY || process.env.CRON_SECRET;
+  const provided = req.headers['x-admin-key'] || req.query.admin_key;
+  
+  if (secret) {
+    if (provided && provided === secret) return next();
+    return res.status(403).json({ success: false, error: 'Forbidden: Invalid or missing admin authorization key' });
+  }
+  
+  // If no secret configured yet, restrict strictly to localhost / loopback
+  const ip = req.ip || req.connection?.remoteAddress || '';
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') {
+    return next();
+  }
+  
+  return res.status(403).json({ success: false, error: 'Forbidden: Manual triggers require x-admin-key header' });
+};
+
+// Manual trigger endpoints for testing (Protected)
+router.get('/trigger-daily-blog', requireAdminSecret, async (req, res) => {
   logger.info('🚀 Manually triggering daily blog job');
   try {
     await dailyBlogPublisher(pb, logger);
@@ -325,7 +344,7 @@ router.get('/trigger-daily-blog', async (req, res) => {
   }
 });
 
-router.get('/trigger-trendjacking', async (req, res) => {
+router.get('/trigger-trendjacking', requireAdminSecret, async (req, res) => {
   logger.info('🚀 Manually triggering trendjacking job');
   try {
     await trendjackingPublisher(pb, logger);
@@ -336,7 +355,7 @@ router.get('/trigger-trendjacking', async (req, res) => {
   }
 });
 
-router.get('/trigger-weekly-newsletter', async (req, res) => {
+router.get('/trigger-weekly-newsletter', requireAdminSecret, async (req, res) => {
   logger.info('🚀 Manually triggering weekly newsletter job');
   try {
     const adminToken = await getAdminAuthToken(logger);
@@ -462,15 +481,15 @@ router.get('/trigger-weekly-newsletter', async (req, res) => {
   }
 });
 
-// Manual trigger route for Trendjacking Articles
-router.all('/publish-trendjacking', (req, res) => {
+// Manual trigger route for Trendjacking Articles (Protected)
+router.all('/publish-trendjacking', requireAdminSecret, (req, res) => {
   logger.info('⚡ Manual trigger received for Trendjacking Article Publisher');
   res.json({ success: true, status: 'processing', message: 'Trendjacking Article Publisher launched asynchronously in background.' });
   trendjackingPublisher(pb, logger).catch(err => logger.error('❌ Manual Trendjacking Article Publisher failed:', err.message));
 });
 
-// Manual trigger route for Category Blogs
-router.all('/publish-blog', (req, res) => {
+// Manual trigger route for Category Blogs (Protected)
+router.all('/publish-blog', requireAdminSecret, (req, res) => {
   logger.info('⚡ Manual trigger received for Daily Blog Publisher');
   const category = req.query.category || req.body?.category || null;
   res.json({ success: true, status: 'processing', message: `Daily Blog Publisher for category [${category || 'all'}] launched asynchronously in background.` });

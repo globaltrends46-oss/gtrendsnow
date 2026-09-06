@@ -40,14 +40,9 @@ router.post('/', async (req, res) => {
   logger.info('🔑 GEMINI_API_KEY status:', apiKey ? 'SET' : 'NOT SET');
 
   if (apiKey) {
-    console.log('  Key length:', apiKey.length, 'characters');
-    console.log('  Key prefix:', apiKey.substring(0, 10) + '...');
-    console.log('  Key suffix:', '...' + apiKey.substring(apiKey.length - 10));
-    console.log('  Key format check:', apiKey.startsWith('AIza') ? '✅ Valid format' : '⚠️ Unexpected format');
-    logger.info('🔑 Gemini API Key loaded:', apiKey.substring(0, 10) + '...' + apiKey.substring(apiKey.length - 10));
+    logger.info('🔑 Gemini API Key verified: Configured securely');
   } else {
-    console.log('  ❌ GEMINI_API_KEY is not set in environment');
-    logger.error('❌ GEMINI_API_KEY not configured');
+    logger.error('❌ GEMINI_API_KEY not configured in environment');
   }
 
   if (!apiKey) {
