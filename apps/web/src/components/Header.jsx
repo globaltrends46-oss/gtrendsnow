@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Heart } from 'lucide-react';
+import DonationModal from './DonationModal.jsx';
 
 const NAV_ITEMS = [
   { name: 'Home', path: '/' },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const location = useLocation();
 
   return (
@@ -54,10 +56,26 @@ const Header = () => {
                 </Link>
               );
             })}
+
+            <button
+              onClick={() => setIsDonationModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 transition-all hover:scale-105 cursor-pointer ml-1"
+              title="Support GTrends Global with PayPal"
+            >
+              <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
+              <span>Donate</span>
+            </button>
           </nav>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => setIsDonationModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 border border-rose-500/30 text-rose-300"
+            >
+              <Heart className="w-3 h-3 text-rose-400 fill-rose-400" />
+              <span>Donate</span>
+            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-foreground p-2 -mr-2 transition-colors hover:text-primary"
@@ -90,9 +108,27 @@ const Header = () => {
                 </Link>
               );
             })}
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsDonationModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-rose-500/20"
+              >
+                <Heart className="w-4 h-4 fill-white" />
+                <span>Support Platform via PayPal</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Interactive PayPal Donation Modal */}
+      <DonationModal
+        isOpen={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+      />
     </header>
   );
 };

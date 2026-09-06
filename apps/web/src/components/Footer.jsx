@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, Mail, ShieldAlert } from 'lucide-react';
+import { Zap, Mail, ShieldAlert, Heart } from 'lucide-react';
+import DonationModal from './DonationModal.jsx';
 
 const Footer = () => {
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+
   const quickLinks = [
     { path: '/', label: 'Home' },
+    { path: '/mcp', label: 'MCP & Repos' },
     { path: '/resume-builder', label: 'CV Builder' },
     { path: '/wealth', label: 'Wealth Tools' },
     { path: '/credit', label: 'Credit Optimizer' },
@@ -50,9 +54,18 @@ const Footer = () => {
                 GTrends Global
               </span>
             </Link>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4 max-w-md">
-              Empowering the modern global economy with free tools for wealth, credit, and entrepreneurial success.
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5 max-w-md">
+              Empowering the modern global economy with free tools for wealth, credit, AI repositories, and entrepreneurial success.
             </p>
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              <button
+                onClick={() => setIsDonationModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold text-xs shadow-sm hover:scale-105 transition-all cursor-pointer"
+              >
+                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+                <span>Support Platform (PayPal)</span>
+              </button>
+            </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
               <Mail className="w-4 h-4" />
               <a href="mailto:contact@gtrendsglobal.com">contact@gtrendsglobal.com</a>
@@ -100,6 +113,11 @@ const Footer = () => {
           </div>
         </div>
       </div>
+
+      <DonationModal
+        isOpen={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+      />
     </footer>
   );
 };
