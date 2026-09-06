@@ -9,6 +9,7 @@ import CreditPage from './pages/CreditPage.jsx';
 import CreatorPage from './pages/CreatorPage.jsx';
 import EcomPage from './pages/EcomPage.jsx';
 import VaultPage from './pages/VaultPage.jsx';
+import McpPage from './pages/McpPage.jsx';
 import BlogPage from './pages/BlogPage.jsx';
 import ArticlesPage from './pages/ArticlesPage.jsx';
 import ArticleDetailPage from './pages/ArticleDetailPage.jsx';
@@ -58,6 +59,9 @@ function App() {
         
         {/* Resource Vault */}
         <Route path="/vault" element={<VaultPage />} />
+        
+        {/* MCP & AI Repositories Hub */}
+        <Route path="/mcp" element={<McpPage />} />
         
         {/* Global News Feed & Articles */}
         <Route path="/blog" element={<BlogPage />} />

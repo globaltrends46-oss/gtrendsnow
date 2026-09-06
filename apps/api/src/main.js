@@ -29,6 +29,7 @@ import { globalRateLimit } from './middleware/global-rate-limit.js';
 import logger from './utils/logger.js';
 import { BodyLimit } from './constants/common.js';
 import { dailyBlogPublisher, trendjackingPublisher, weeklyNewsletter } from './jobs/index.js';
+import { updateMcpRegistry } from './jobs/mcp-registry-updater.js';
 import pb from './utils/pocketbaseClient.js';
 
 const app = express();
@@ -117,6 +118,11 @@ cron.schedule('0 9 * * 1', () => {
 	weeklyNewsletter(pb, logger).catch(err => logger.error('Weekly newsletter job failed:', err));
 });
 logger.info('Weekly newsletter job scheduled (Monday 9 AM UTC)');
+
+cron.schedule('0 3 * * *', () => {
+	updateMcpRegistry(logger).catch(err => logger.error('MCP registry updater failed:', err));
+});
+logger.info('Daily MCP registry star updater job scheduled (3 AM UTC)');
 
 const port = process.env.PORT || 3001;
 

@@ -21,6 +21,7 @@ import integratedAiRouter from './integrated-ai.js';
 import generateVaultFilesRouter from './generate-vault-files.js';
 import analyticsRouter from './analytics.js';
 import postsRouter from './posts.js';
+import mcpRouter from './mcp.js';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ export default () => {
     router.get('/health', healthCheck);
     router.use('/posts', postsRouter);
     router.use('/blog-posts', postsRouter);
+    router.use('/mcp', mcpRouter);
     router.use('/analytics', analyticsRouter);
     router.use('/test', testRouter);
     router.use('/vip-test', vipTestRouter);
