@@ -9,82 +9,65 @@ import logger from './logger.js';
 export async function generateTextWithAI(prompt, loggerInstance = null, context = {}) {
   const activeLogger = loggerInstance || logger;
 
-  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_KEY || process.env.OMNI_API_KEY || process.env.OPENROUTER_API_KEY)?.trim();
+  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_KEY || process.env.OMNI_API_KEY || process.env.OPENROUTER_API_KEY || 'sk-114afa90af2eef95-1a4549-2d417547')?.trim();
   const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_NEW)?.trim();
   const groqKey = (process.env.GROQ_API_KEY)?.trim();
   const openaiKey = (process.env.OPENAI_API_KEY)?.trim();
 
-  // 1. Try Groq if key is present (ultra fast, high rate limits)
-  if (groqKey) {
-    try {
-      activeLogger.info('🤖 Attempting AI generation via Groq API...');
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7
-        })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          activeLogger.info('✅ Groq AI generation successful!');
-          return content;
-        }
-      }
-    } catch (err) {
-      activeLogger.warn(`⚠️ Groq API failed: ${err.message}`);
-    }
-  }
-
-  // 2. Try OmniRoute / OpenRouter gateways if key is present
+  // 1. Try OmniRoute Gateway (gateway.gtrendsnow.com) first if key is present
   if (omniKey) {
     const candidateBaseUrls = [];
     if (process.env.OMNIROUTE_BASE_URL) {
       candidateBaseUrls.push(process.env.OMNIROUTE_BASE_URL.replace(/\/$/, ''));
     }
+    // Hardcoded primary subdomain
+    candidateBaseUrls.push('https://gateway.gtrendsnow.com/v1');
     candidateBaseUrls.push('https://openrouter.ai/api/v1');
     candidateBaseUrls.push('https://api.openai.com/v1');
 
-    const omniModel = process.env.OMNIROUTE_MODEL || 'google/gemini-2.5-flash' || 'openai/gpt-4o-mini';
+    const candidateModels = process.env.OMNIROUTE_MODEL 
+      ? [process.env.OMNIROUTE_MODEL] 
+      : ['gemini/gemini-2.5-flash', 'gemini/gemini-3.5-flash', 'auto/fast'];
 
     for (const baseUrl of candidateBaseUrls) {
-      try {
-        activeLogger.info(`🤖 Attempting AI generation via gateway [${baseUrl}]...`);
-        const response = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${omniKey}`,
-            'HTTP-Referer': 'https://gtrendsnow.com',
-            'X-Title': 'GTrends Global'
-          },
-          body: JSON.stringify({
-            model: omniModel,
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7
-          })
-        });
+      const modelsToTry = baseUrl.includes('gateway.gtrendsnow.com') 
+        ? candidateModels 
+        : [process.env.OMNIROUTE_MODEL || 'google/gemini-2.5-flash'];
 
-        if (response.ok) {
-          const data = await response.json();
-          const content = data.choices?.[0]?.message?.content;
-          if (content) {
-            activeLogger.info(`✅ AI generation successful via [${baseUrl}]!`);
-            return content;
+      for (const model of modelsToTry) {
+        try {
+          activeLogger.info(`🤖 Attempting AI generation via OmniRoute gateway [${baseUrl}] with model [${model}]...`);
+          const response = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            signal: AbortSignal.timeout(35000),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${omniKey}`,
+              'HTTP-Referer': 'https://gtrendsnow.com',
+              'X-Title': 'GTrends Global'
+            },
+            body: JSON.stringify({
+              model: model,
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7,
+              stream: false
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content;
+            if (content) {
+              activeLogger.info(`✅ OmniRoute AI generation successful via [${baseUrl}] using [${model}]!`);
+              return content;
+            }
+          } else {
+            const errText = await response.text();
+            activeLogger.warn(`⚠️ Gateway error at [${baseUrl}] (${response.status}): ${errText.substring(0, 120)}`);
           }
-        } else {
-          const errText = await response.text();
-          activeLogger.warn(`⚠️ Gateway error at [${baseUrl}] (${response.status}): ${errText.substring(0, 120)}`);
+        } catch (err) {
+          activeLogger.warn(`⚠️ Gateway request failed at [${baseUrl}] with [${model}]: ${err.message}`);
         }
-      } catch (err) {
-        activeLogger.warn(`⚠️ Gateway request failed at [${baseUrl}]: ${err.message}`);
       }
     }
   }
