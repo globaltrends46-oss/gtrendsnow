@@ -4,21 +4,21 @@
 export const DONATION_CONFIG = {
   paypalEmail: 'ram25108@gmail.com',
   paypalMeHandle: 'ram25108',
-  itemName: 'Support GTrends Global Platform',
+  itemName: 'GTrends Global 80-20 Social Impact & Free Tools Initiative',
   currency: 'USD',
   presetAmounts: [
-    { value: 5, label: '$5', desc: 'Buy a Coffee', icon: '☕' },
-    { value: 15, label: '$15', desc: 'Platform Supporter', icon: '⚡' },
-    { value: 25, label: '$25', desc: 'AI Advocate', icon: '🌟' },
-    { value: 50, label: '$50', desc: 'Core Patron', icon: '🚀' },
-    { value: 100, label: '$100', desc: 'VIP Champion', icon: '👑' },
+    { value: 5, label: '$5', desc: 'Student Aid', impact: 'Keeps AI career tools free for an unemployed graduate', icon: '☕' },
+    { value: 15, label: '$15', desc: 'Community Supporter', impact: 'Sponsors digital literacy resources for underprivileged youth', icon: '⚡' },
+    { value: 25, label: '$25', desc: 'Social Cause Booster', impact: 'Directly aids grassroots welfare & career workshops', icon: '🌟' },
+    { value: 50, label: '$50', desc: 'Impact Patron', impact: 'Powers compute & relief for dozens of job seekers', icon: '🚀' },
+    { value: 100, label: '$100', desc: 'Change Champion', impact: 'Major benefactor for social welfare & open education', icon: '👑' },
   ],
   /**
    * Generates official PayPal donation URL (Zero SDK, 100% reliable)
    */
   getDonationUrl: (amount = 15) => {
     const email = encodeURIComponent('ram25108@gmail.com');
-    const item = encodeURIComponent('Support GTrends Global Platform');
+    const item = encodeURIComponent('GTrends Global 80-20 Social Impact & Free Tools Initiative');
     const cleanAmount = parseFloat(amount) > 0 ? parseFloat(amount) : 15;
     return `https://www.paypal.com/donate?business=${email}&currency_code=USD&amount=${cleanAmount}&item_name=${item}`;
   },
