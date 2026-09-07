@@ -1,0 +1,836 @@
+[
+  {
+    "id": "mcp-postgres",
+    "name": "PostgreSQL MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Databases & Storage",
+    "stars": 39200,
+    "downloads": "1.2M+",
+    "growthRate": "+16% this week",
+    "tags": [
+      "database",
+      "sql",
+      "postgres",
+      "analytics",
+      "backend"
+    ],
+    "shortDescription": "Enables Claude, Cursor, and AI agents to securely query PostgreSQL databases, inspect schemas, and execute read-only or read-write SQL analytics.",
+    "fullUseCase": "### Executive Problem & Solution\nIn modern software engineering and data analytics, developers and business analysts frequently need to inspect database tables, diagnose data anomalies, write complex multi-table joins, and extract reporting metrics. Traditional workflows require switching between database GUIs (e.g. pgAdmin, DBeaver) and AI assistants, manually copying schema definitions and SQL queries back and forth.\n\nThe PostgreSQL MCP Server establishes a direct, standardized Model Context Protocol bridge between your PostgreSQL database and AI agents (such as Claude Desktop, Cursor, or autonomous pipelines). The LLM can directly inspect schemas, explore table relationships, run sanitized parameterized queries, and explain performance execution plans without exposing raw database passwords to third-party clouds.\n\n### Practical Enterprise Workflows\n- **Automated Root-Cause Analysis:** When an incident occurs, an AI agent queries error log tables, correlates timestamps with user IDs, and identifies faulty database rows.\n- **Zero-Code Ad-Hoc Reporting:** Marketing and finance teams ask natural-language questions like *\"Show monthly recurring revenue churn by country for Q3\"*, and the agent automatically formulates and executes the SQL query.\n- **Schema Migrations & Refactoring:** The agent inspects existing table indices and foreign keys, suggesting optimized indexes to eliminate full table scans.",
+    "toolsProvided": [
+      {
+        "name": "read_query",
+        "description": "Executes a read-only SELECT SQL query and returns rows in JSON format."
+      },
+      {
+        "name": "write_query",
+        "description": "Executes INSERT, UPDATE, or DELETE statements."
+      },
+      {
+        "name": "list_tables",
+        "description": "Lists all available tables and views in the connected schema."
+      },
+      {
+        "name": "describe_table",
+        "description": "Returns table column names, data types, constraints, and index definitions."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"postgres\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-postgres\",\n        \"postgresql://username:password@localhost:5432/mydb\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n1. Run via NPX:\n```bash\nnpx -y @modelcontextprotocol/server-postgres postgresql://user:pass@localhost:5432/dbname\n```\n2. Add the JSON snippet to your Claude Desktop or Cursor configuration.\n3. Restart your AI client to begin querying.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-filesystem",
+    "name": "Local Filesystem MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "File Systems & Knowledge",
+    "stars": 39200,
+    "downloads": "2.5M+",
+    "growthRate": "+19% this week",
+    "tags": [
+      "filesystem",
+      "local-files",
+      "developer-tools",
+      "automation",
+      "productivity"
+    ],
+    "shortDescription": "Grants AI assistants secure, sandboxed access to read, write, search, and manage directories and files on your local computer.",
+    "fullUseCase": "### Executive Problem & Solution\nStandard LLM web interfaces operate in isolated sandboxes with zero awareness of your local codebase, project files, or desktop documents. Manually uploading individual files or copying snippets is tedious, prone to truncation, and breaks contextual awareness.\n\nThe Filesystem MCP Server empowers AI agents to autonomously explore approved directories, view code files, search for symbols across whole repositories, and create or refactor project files directly on your local hard drive with strict directory-level security restrictions.\n\n### Practical Enterprise Workflows\n- **Whole-Codebase Refactoring:** Let the AI traverse nested project folders, update deprecated library imports across 50+ files, and verify syntax.\n- **Automated Documentation Generation:** Point the assistant at your internal documents or source code to automatically synthesize READMEs, OpenAPI specs, and user guides.\n- **Log & Diagnostic Analysis:** AI agents directly tail, filter, and summarize gigabyte-sized system log files stored on local disks.",
+    "toolsProvided": [
+      {
+        "name": "read_file",
+        "description": "Reads complete contents of a local file within permitted directories."
+      },
+      {
+        "name": "write_file",
+        "description": "Creates or updates a file with specified content."
+      },
+      {
+        "name": "list_directory",
+        "description": "Lists all files and subdirectories with sizes and metadata."
+      },
+      {
+        "name": "search_files",
+        "description": "Recursively searches for filenames and directory patterns."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"filesystem\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-filesystem\",\n        \"/Users/username/Projects\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-filesystem /path/to/allowed/directory\n```\nSpecify permitted directories to ensure secure sandboxing.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-github",
+    "name": "GitHub MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Developer Tools",
+    "stars": 39200,
+    "downloads": "1.9M+",
+    "growthRate": "+22% this week",
+    "tags": [
+      "git",
+      "github",
+      "ci-cd",
+      "pull-requests",
+      "code-review"
+    ],
+    "shortDescription": "Connects AI agents directly to GitHub API to search repositories, inspect commits, create branches, manage issues, and review pull requests.",
+    "fullUseCase": "### Executive Problem & Solution\nEngineering teams waste hundreds of hours every quarter toggling between GitHub PR reviews, issue trackers, and coding assistants. Code reviews frequently miss subtle bugs, while issue triaging requires tedious manual cross-referencing of commit histories.\n\nThe GitHub MCP Server turns your AI agent into an automated engineering co-pilot connected directly to your GitHub organization. It can query file histories, inspect git diffs on open PRs, draft detailed code review comments, label triage tickets, and open pull requests with automated bug fixes.\n\n### Practical Enterprise Workflows\n- **Automated Pull Request Code Reviews:** Trigger an AI review when a PR is opened to analyze edge cases, security vulnerabilities, and style violations.\n- **Smart Issue Triaging & Deduplication:** When a customer files a bug, the agent searches existing open and closed issues to prevent duplicates and points developers to the suspect commit.\n- **Release Note Compilation:** The agent summarizes all merged PRs between two git tags into publication-ready changelogs.",
+    "toolsProvided": [
+      {
+        "name": "get_file_contents",
+        "description": "Retrieves raw file contents from any branch in a GitHub repository."
+      },
+      {
+        "name": "create_or_update_file",
+        "description": "Commits a file directly to a branch on GitHub."
+      },
+      {
+        "name": "create_pull_request",
+        "description": "Opens a new PR with title, body, and branch specs."
+      },
+      {
+        "name": "search_repositories",
+        "description": "Searches GitHub repositories by stars, language, and topics."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"github\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-github\"\n      ],\n      \"env\": {\n        \"GITHUB_PERSONAL_ACCESS_TOKEN\": \"ghp_your_token_here\"\n      }\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n1. Create a GitHub Personal Access Token with repo scope.\n2. Add the token to the env block in your MCP client config.\n3. Run: `npx -y @modelcontextprotocol/server-github`.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-brave-search",
+    "name": "Brave Search MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Web & Scraping",
+    "stars": 39200,
+    "downloads": "980K+",
+    "growthRate": "+17% this week",
+    "tags": [
+      "search",
+      "web-search",
+      "brave",
+      "research",
+      "real-time-data"
+    ],
+    "shortDescription": "Equips AI models with privacy-preserving, real-time web search and local location intelligence via the independent Brave Search API.",
+    "fullUseCase": "### Executive Problem & Solution\nLLMs suffer from knowledge cutoff limits and hallucinate when asked about real-time events, current financial prices, breaking tech news, or regional local services. Many search integration APIs track queries or inject paid advertising biases.\n\nThe Brave Search MCP Server connects AI agents to Brave’s completely independent 10-billion-page web index. The AI can execute real-time searches, extract snippet citations, query local business information, and ground its answers in verified up-to-the-minute web data.\n\n### Practical Enterprise Workflows\n- **Real-Time Market Intelligence:** Query today's commodity prices, regulatory announcements, and breaking competitor releases.\n- **Fact-Checking & Research Grounding:** Verify claims by fetching multiple primary web sources before finalizing reports.\n- **Local Commerce Discovery:** Query local service providers, opening hours, and geographic addresses.",
+    "toolsProvided": [
+      {
+        "name": "brave_web_search",
+        "description": "Executes a global web search query and returns ranked search results with URLs and snippets."
+      },
+      {
+        "name": "brave_local_search",
+        "description": "Searches for local business establishments, addresses, and contact data."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"brave-search\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-brave-search\"\n      ],\n      \"env\": {\n        \"BRAVE_API_KEY\": \"YOUR_BRAVE_API_KEY_HERE\"\n      }\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n1. Obtain a free API key at https://brave.com/search/api/\n2. Insert your BRAVE_API_KEY in the config.\n3. Test web searching with your AI client.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-puppeteer",
+    "name": "Puppeteer Headless Chrome MCP",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Web & Scraping",
+    "stars": 39200,
+    "downloads": "1.6M+",
+    "growthRate": "+25% this week",
+    "tags": [
+      "browser",
+      "scraping",
+      "automation",
+      "puppeteer",
+      "chrome"
+    ],
+    "shortDescription": "Gives AI agents a live headless Chromium browser to navigate pages, click buttons, fill forms, take screenshots, and extract JavaScript-rendered content.",
+    "fullUseCase": "### Executive Problem & Solution\nModern web applications rely heavily on client-side JavaScript (React, Vue, Angular, SPAs). Traditional HTTP fetch requests only download empty HTML boilerplate and fail to access interactive dashboards, paywalled views, or multi-step checkout flows.\n\nThe Puppeteer MCP Server equips AI models with a full headless Chrome instance. The agent can click interactive elements, type into search bars, submit forms, wait for AJAX network requests, extract deeply nested DOM elements, and capture full-page high-resolution screenshots for visual verification.\n\n### Practical Enterprise Workflows\n- **Automated Competitor Price Auditing:** Navigate dynamic e-commerce catalogs, select dropdown options, and extract rendered pricing.\n- **End-to-End QA Testing:** Agents autonomously test user signup flows, validating that form errors trigger correctly and reporting visual regressions.\n- **SPA Content Extraction:** Scrape single-page applications and client-side data dashboards that require JavaScript execution.",
+    "toolsProvided": [
+      {
+        "name": "navigate",
+        "description": "Navigates the headless browser to any specified URL."
+      },
+      {
+        "name": "click",
+        "description": "Clicks an element matching a CSS selector."
+      },
+      {
+        "name": "fill",
+        "description": "Types text into form input fields."
+      },
+      {
+        "name": "screenshot",
+        "description": "Captures a PNG screenshot of the current page viewport or full document."
+      },
+      {
+        "name": "evaluate",
+        "description": "Executes custom JavaScript inside the browser page context."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"puppeteer\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-puppeteer\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-puppeteer\n```\nNode.js 18+ required. Chromium installs automatically on first execution.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-memory",
+    "name": "Memory Graph MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "AI Agents & LLMs",
+    "stars": 39200,
+    "downloads": "2.2M+",
+    "growthRate": "+33% this week",
+    "tags": [
+      "memory",
+      "knowledge-graph",
+      "agents",
+      "long-term-memory",
+      "context"
+    ],
+    "shortDescription": "Provides open-ended persistent long-term memory for AI assistants using a local knowledge graph of entities, relations, and observations.",
+    "fullUseCase": "### Executive Problem & Solution\nEvery time you start a new conversation with an LLM, it forgets everything you previously discussed: your coding style preferences, your infrastructure architecture, team names, API design guidelines, and personal constraints. Users waste valuable time repeatedly re-explaining the same context.\n\nThe Memory Graph MCP Server equips AI assistants with durable, persistent long-term memory stored on your local disk as an entity-relationship knowledge graph. Whenever you teach the AI something new, it creates entities and relations that persist across restarts and subsequent sessions.\n\n### Practical Enterprise Workflows\n- **Personalized Pair-Programming:** The AI remembers your preferred variable naming conventions, directory patterns, and forbidden third-party packages.\n- **Multi-Session Project Planning:** Maintain architectural roadmaps across weeks of iterative development without losing context.\n- **Customer Relationship Context:** Record customer preferences and organizational hierarchies that persist across support tickets.",
+    "toolsProvided": [
+      {
+        "name": "create_entities",
+        "description": "Stores new conceptual entities with names, types, and observational notes."
+      },
+      {
+        "name": "create_relations",
+        "description": "Links two entities with directed relationship descriptors."
+      },
+      {
+        "name": "open_nodes",
+        "description": "Retrieves knowledge graph nodes and connected relationship paths."
+      },
+      {
+        "name": "search_nodes",
+        "description": "Searches the knowledge graph using fuzzy keyword matching."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"memory\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-memory\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-memory\n```\nData is persisted in a local `memory.json` file.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-sqlite",
+    "name": "SQLite Database MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Databases & Storage",
+    "stars": 39200,
+    "downloads": "910K+",
+    "growthRate": "+14% this week",
+    "tags": [
+      "sqlite",
+      "database",
+      "sql",
+      "embedded-db",
+      "mobile"
+    ],
+    "shortDescription": "Enables AI agents to query, inspect, and analyze local SQLite database files, mobile app databases, and embedded datasets directly.",
+    "fullUseCase": "### Executive Problem & Solution\nSQLite is the most widely deployed database engine in the world, powering iOS/Android apps, browser histories, local desktop tools, and edge IoT devices. Inspecting SQLite databases usually requires installing separate desktop tools and running manual SQL queries.\n\nThe SQLite MCP Server allows LLMs to connect directly to any local .sqlite or .db file. It automatically introspects tables, analyzes row counts, crafts efficient queries, and visualizes summary trends for analytics, debugging, and migration tasks.\n\n### Practical Enterprise Workflows\n- **Mobile App State Debugging:** Inspect an extracted SQLite database from an iOS or Android app to debug local cache anomalies and user session states.\n- **Local Data Science Exploration:** Give AI direct access to SQLite analytical data dumps to calculate correlations and generate clean summaries.\n- **Embedded System Log Audits:** Query local transactional logs stored in lightweight SQLite databases.",
+    "toolsProvided": [
+      {
+        "name": "read_query",
+        "description": "Executes a read-only SQL query against the SQLite database file."
+      },
+      {
+        "name": "list_tables",
+        "description": "Returns all table and view names in the database."
+      },
+      {
+        "name": "describe_table",
+        "description": "Provides complete table schema, column types, and foreign key definitions."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"sqlite\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-sqlite\",\n        \"--db-path\",\n        \"/path/to/database.db\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-sqlite --db-path /path/to/database.db\n```",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-docker",
+    "name": "Docker DevOps MCP Server",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Cloud & DevOps",
+    "stars": 39200,
+    "downloads": "1.5M+",
+    "growthRate": "+18% this week",
+    "tags": [
+      "docker",
+      "containers",
+      "devops",
+      "microservices",
+      "infrastructure"
+    ],
+    "shortDescription": "Empowers AI models to inspect Docker containers, read runtime logs, manage container lifecycles, and diagnose containerized environments.",
+    "fullUseCase": "### Executive Problem & Solution\nDiagnosing failures across multi-container Docker Compose stacks requires executing endless commands: docker ps, docker logs --tail, docker inspect, and docker stats. Developers often get lost in massive log outputs trying to pinpoint why a microservice crashed.\n\nThe Docker MCP Server provides an intelligent interface to your local or remote Docker daemon. The AI assistant can inspect running containers, query recent log streams, identify out-of-memory (OOM) kill events, analyze network port bindings, and restart failed containers autonomously.\n\n### Practical Enterprise Workflows\n- **Automated Container Crash Debugging:** When a local service fails, the AI inspects the exit code, reads the tail logs, identifies the missing environment variable, and suggests the exact fix.\n- **Resource Leak Detection:** Continuously monitor container memory and CPU usage to detect memory leaks before crashes occur.\n- **Environment Bootstrap Verification:** Ensure all database, Redis, and message broker containers are healthy before running integration test suites.",
+    "toolsProvided": [
+      {
+        "name": "list_containers",
+        "description": "Lists all running, paused, and stopped Docker containers."
+      },
+      {
+        "name": "get_container_logs",
+        "description": "Retrieves stdout and stderr logs for a specific container ID."
+      },
+      {
+        "name": "restart_container",
+        "description": "Restarts a specified Docker container."
+      },
+      {
+        "name": "inspect_container",
+        "description": "Returns complete low-level configuration, volume mounts, and network settings."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"docker\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-docker\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-docker\n```\nRequires local Docker daemon to be running.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-slack",
+    "name": "Slack Team Collaboration MCP",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Communication & Productivity",
+    "stars": 39200,
+    "downloads": "780K+",
+    "growthRate": "+20% this week",
+    "tags": [
+      "slack",
+      "chat",
+      "team-collaboration",
+      "messaging",
+      "notifications"
+    ],
+    "shortDescription": "Allows AI models to browse Slack channels, read conversation threads, post formatted messages, and search company communications.",
+    "fullUseCase": "### Executive Problem & Solution\nValuable organizational knowledge is scattered across hundreds of Slack channels and conversation threads. Onboarding engineers and project managers spend hours searching for historical decisions, architecture diagrams, and deployment announcements.\n\nThe Slack MCP Server bridges the gap between your team's Slack workspace and your AI assistant. The assistant can search past conversations, summarize discussions that took place in a channel over the last 24 hours, draft executive status updates, and post announcements directly to team channels.\n\n### Practical Enterprise Workflows\n- **Daily Standup Summarization:** The AI reads updates posted in #dev-standup and generates a concise bulleted digest for management.\n- **Customer Escalation Alerts:** Automatically post critical production incident alerts and runbook links into #incident-response.\n- **Knowledge Retrieval:** Ask the assistant \"Who was handling the Stripe webhook migration last month?\" and it retrieves the relevant Slack thread.",
+    "toolsProvided": [
+      {
+        "name": "list_channels",
+        "description": "Lists public and private channels the bot has access to."
+      },
+      {
+        "name": "get_channel_history",
+        "description": "Retrieves recent messages and thread replies from a channel."
+      },
+      {
+        "name": "post_message",
+        "description": "Sends a formatted message to a designated Slack channel."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"slack\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-slack\"\n      ],\n      \"env\": {\n        \"SLACK_BOT_TOKEN\": \"xoxb-your-token\",\n        \"SLACK_TEAM_ID\": \"T01234567\"\n      }\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n1. Create a Slack App in your workspace with channels:read, channels:history, chat:write scopes.\n2. Add SLACK_BOT_TOKEN and SLACK_TEAM_ID to your MCP config.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-sequential-thinking",
+    "name": "Sequential Thinking Deep Reasoning MCP",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "AI Agents & LLMs",
+    "stars": 39200,
+    "downloads": "3.4M+",
+    "growthRate": "+39% this week",
+    "tags": [
+      "reasoning",
+      "thinking",
+      "deep-thought",
+      "chain-of-thought",
+      "architecture"
+    ],
+    "shortDescription": "Dynamic step-by-step reasoning server that enables AI models to formulate multi-stage thought branches, revise hypotheses, and solve deep technical problems.",
+    "fullUseCase": "### Executive Problem & Solution\nStandard LLMs often rush to generate code or answers on the first pass, leading to premature assumptions, architectural dead ends, and overlooked edge cases on complex multi-step engineering challenges.\n\nThe Sequential Thinking MCP Server gives AI assistants an explicit, multi-turn reasoning sandbox. The model can decompose complex problems into discrete thought steps, branch into exploratory hypotheses, score confidence levels, verify intermediate conclusions, and revise earlier thinking before presenting the final verified solution.\n\n### Practical Enterprise Workflows\n- **Complex Distributed System Design:** Map out failover modes, consensus protocols, and latency bottlenecks before writing architecture specs.\n- **Subtle Bug Diagnosis:** Systematically eliminate candidate causes for race conditions and memory leaks.\n- **Refactoring Strategy:** Plan dependency graphs and migration phases for multi-module codebases.",
+    "toolsProvided": [
+      {
+        "name": "sequentialthinking",
+        "description": "Provides a structured step-by-step reasoning loop with thought numbers, revisions, and branching."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"sequential-thinking\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-sequential-thinking\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\nnpx -y @modelcontextprotocol/server-sequential-thinking\n```\nZero configuration required. Adds immediate multi-turn thinking capabilities.",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-ollama",
+    "name": "Ollama: Run LLMs Locally",
+    "owner": "ollama",
+    "repo": "ollama",
+    "category": "AI Agents & LLMs",
+    "stars": 129400,
+    "downloads": "16M+",
+    "growthRate": "+10% this week",
+    "tags": [
+      "local-ai",
+      "llm-runner",
+      "llama",
+      "mistral",
+      "deepseek",
+      "open-source"
+    ],
+    "shortDescription": "Get up and running with Llama 3.3, DeepSeek-R1, Mistral, and other large language models locally on macOS, Linux, and Windows with zero setup.",
+    "fullUseCase": "### Executive Problem & Solution\nOrganizations are frequently barred from using cloud LLM APIs due to strict data privacy regulations (HIPAA, GDPR, SOC 2), data sovereignty mandates, or costly token billing at scale.\n\nOllama democratizes local AI by packaging model weights, configuration, and GPU acceleration into a single seamless binary. With one terminal command, developers can download and run multi-gigabyte models with full hardware optimization for Apple Silicon Metal, NVIDIA CUDA, and AMD ROCm.\n\n### Practical Enterprise Workflows\n- **100% Private Offline Inference:** Process confidential medical, legal, or financial documents without a single byte leaving the premises.\n- **Local Coding Assistant:** Pair with Continue.dev or Cursor to autocomplete code entirely offline on your laptop.\n- **Cost-Free Development Sandbox:** Run millions of development and testing prompts without racking up API expenses.",
+    "toolsProvided": [
+      {
+        "name": "ollama_run",
+        "description": "Executes inference on any locally downloaded model."
+      },
+      {
+        "name": "ollama_pull",
+        "description": "Downloads quantized GGUF weights directly from registry."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"ollama\": {\n      \"command\": \"ollama\",\n      \"args\": [\n        \"serve\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\ncurl -fsSL https://ollama.com/install.sh | sh\nollama run llama3.3\n```",
+    "downloadUrl": "https://github.com/ollama/ollama/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-vllm",
+    "name": "vLLM: High-Throughput LLM Serving",
+    "owner": "vllm-project",
+    "repo": "vllm",
+    "category": "AI Agents & LLMs",
+    "stars": 43100,
+    "downloads": "7.2M+",
+    "growthRate": "+20% this week",
+    "tags": [
+      "inference",
+      "serving",
+      "cuda",
+      "paged-attention",
+      "enterprise"
+    ],
+    "shortDescription": "A high-throughput and memory-efficient inference and serving engine for LLMs with PagedAttention, continuous batching, and OpenAI-compatible API.",
+    "fullUseCase": "### Executive Problem & Solution\nServing production LLMs at scale is notoriously expensive. GPU memory (VRAM) is quickly exhausted by key-value (KV) cache fragmentation, capping throughput at a fraction of theoretical hardware capacity.\n\nvLLM introduces PagedAttention, an algorithm inspired by virtual memory paging in operating systems that eliminates KV cache fragmentation. It delivers 2x to 4x higher throughput than standard serving frameworks while providing a drop-in replacement for the OpenAI API format.\n\n### Practical Enterprise Workflows\n- **Enterprise Private AI Gateway:** Host an OpenAI-compatible API on your own Kubernetes clusters serving hundreds of concurrent employees.\n- **High-Volume Batch Processing:** Process millions of categorization or summarization jobs at maximum GPU utilization.\n- **Custom Fine-Tuned Model Deployment:** Serve proprietary fine-tuned weights with multi-LoRA support.",
+    "toolsProvided": [
+      {
+        "name": "vllm_serve",
+        "description": "Launches OpenAI-compatible HTTP server on port 8000."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"vllm\": {\n      \"command\": \"python\",\n      \"args\": [\n        \"-m\",\n        \"vllm.entrypoints.openai.api_server\",\n        \"--model\",\n        \"meta-llama/Llama-3.1-8B-Instruct\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\npip install vllm\nvllm serve meta-llama/Llama-3.1-8B-Instruct\n```",
+    "downloadUrl": "https://github.com/vllm-project/vllm/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-langchain",
+    "name": "LangChain: Context-Aware LLM Applications",
+    "owner": "langchain-ai",
+    "repo": "langchain",
+    "category": "AI Agents & LLMs",
+    "stars": 105600,
+    "downloads": "35M+",
+    "growthRate": "+12% this week",
+    "tags": [
+      "rag",
+      "llm-framework",
+      "agents",
+      "chains",
+      "vector-stores"
+    ],
+    "shortDescription": "The industry-standard framework to build context-aware, reasoning applications with composable components for prompts, models, and retrieval.",
+    "fullUseCase": "### Executive Problem & Solution\nConnecting LLMs to external APIs, vector stores, proprietary documents, and memory requires writing hundreds of lines of boilerplate orchestration code.\n\nLangChain provides standardized abstractions (LangChain Expression Language - LCEL) to connect language models to data sources and execution environments. It simplifies Retrieval-Augmented Generation (RAG), structured data extraction, and multi-agent coordination.\n\n### Practical Enterprise Workflows\n- **Enterprise RAG Knowledge Hubs:** Ingest internal PDFs, index them in vector databases, and let employees ask natural-language questions with verified citations.\n- **Autonomous Data Pipelines:** Extract unstructured invoice text into validated Pydantic JSON schemas.\n- **Multi-Tool Autonomous Agents:** Equip models with Google Search, calculators, and API callers to accomplish complex tasks.",
+    "toolsProvided": [
+      {
+        "name": "lcel_chain",
+        "description": "Executes a streaming runnable LCEL chain."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"langchain\": {\n      \"command\": \"python\",\n      \"args\": [\n        \"-m\",\n        \"langchain_community\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\npip install langchain langchain-openai\n```",
+    "downloadUrl": "https://github.com/langchain-ai/langchain/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-crewai",
+    "name": "CrewAI: Multi-Agent Orchestration Framework",
+    "owner": "crewAIInc",
+    "repo": "crewAI",
+    "category": "AI Agents & LLMs",
+    "stars": 28900,
+    "downloads": "3.8M+",
+    "growthRate": "+28% this week",
+    "tags": [
+      "agents",
+      "multi-agent",
+      "orchestration",
+      "crew",
+      "automation"
+    ],
+    "shortDescription": "Framework for orchestrating role-playing, autonomous AI agents that collaborate seamlessly to tackle complex enterprise workflows.",
+    "fullUseCase": "### Executive Problem & Solution\nSingle AI prompts struggle with multi-stage projects that require distinct skillsets: research, synthesis, critique, formatting, and verification. Individual agents attempt to do everything at once and produce shallow or generic results.\n\nCrewAI allows developers to assemble crews of specialized agents with distinct personas, goals, backstories, and dedicated toolsets. Agents collaborate synchronously or asynchronously, handing off intermediate artifacts like a real human team.\n\n### Practical Enterprise Workflows\n- **Financial Due Diligence:** Crew with a Market Researcher, a Regulatory Compliance Auditor, and an Investment Memo Writer.\n- **Content Marketing Pipeline:** Research agent crawls breaking trends, writer agent drafts long-form copy, and editor agent audits tone and facts.\n- **Automated Bug Triage & Patching:** Triager isolates stack traces, coder writes git diff, and QA agent runs unit tests.",
+    "toolsProvided": [
+      {
+        "name": "kickoff_crew",
+        "description": "Initiates autonomous multi-agent task execution pipeline."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"crewai\": {\n      \"command\": \"python\",\n      \"args\": [\n        \"-m\",\n        \"crewai.cli\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup\n```bash\npip install crewai crewai-tools\n```",
+    "downloadUrl": "https://github.com/crewAIInc/crewAI/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-dify",
+    "name": "Dify: LLM App Development Platform",
+    "owner": "langgenius",
+    "repo": "dify",
+    "category": "Developer Tools",
+    "stars": 65400,
+    "downloads": "5.1M+",
+    "growthRate": "+23% this week",
+    "tags": [
+      "rag",
+      "workflow",
+      "visual-builder",
+      "enterprise",
+      "orchestration"
+    ],
+    "shortDescription": "Open-source LLM app development platform combining AI workflow orchestration, RAG pipelines, agent capabilities, and model management.",
+    "fullUseCase": "### Executive Problem & Solution\nDeploying production-grade AI agents requires integrating vector databases, orchestrating multi-step prompt chains, monitoring latency, managing API keys, and building user interfaces. Most engineering teams spend months building internal tooling.\n\nDify is an open-source visual workflow builder and backend engine for production AI apps. It provides drag-and-drop RAG pipeline configuration, multi-model routing, prompt engineering sandboxes, and instant web app / API deployment.\n\n### Practical Enterprise Workflows\n- **Customer Support Agent:** Ingest Zendesk articles, connect to CRM database, and deploy an automated chat assistant with human-handoff triggers.\n- **Document Analysis Engine:** Build automated visual workflows that parse incoming PDF contracts, extract clauses, and write summary JSON to internal databases.",
+    "toolsProvided": [
+      {
+        "name": "dify_workflow_run",
+        "description": "Executes a configured visual RAG workflow."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"dify\": {\n      \"command\": \"docker\",\n      \"args\": [\n        \"compose\",\n        \"up\",\n        \"-d\"\n      ]\n    }\n  }\n}",
+    "installGuide": "### Quick Setup via Docker\n```bash\ngit clone https://github.com/langgenius/dify.git\ncd dify/docker\ndocker compose up -d\n```",
+    "downloadUrl": "https://github.com/langgenius/dify/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-mysql",
+    "name": "MySQL Database MCP Server",
+    "owner": "designcomputer",
+    "repo": "mysql_mcp_server",
+    "category": "Databases & Storage",
+    "stars": 3200,
+    "downloads": "210K+",
+    "growthRate": "+14% this week",
+    "tags": [
+      "mysql",
+      "database",
+      "sql",
+      "mariadb",
+      "queries"
+    ],
+    "shortDescription": "Provides AI assistants with direct read/write query execution, schema introspection, and diagnostic profiling for MySQL and MariaDB databases.",
+    "fullUseCase": "### Executive Problem & Solution\nMySQL is the underlying database for millions of legacy and cloud-native applications (WordPress, Magento, custom enterprise backends). Writing complex SQL queries or troubleshooting slow queries often requires specialized DBA assistance.\n\nThe MySQL MCP Server provides a secure bridge allowing LLMs to inspect schemas, explore foreign keys, and safely execute queries against MySQL and MariaDB servers.\n\n### Practical Enterprise Workflows\n- **Order & Inventory Audits:** Query transactional tables to verify stock levels and order statuses in real time.\n- **Index Optimization:** Ask the AI to identify slow queries and recommend composite indices.",
+    "toolsProvided": [
+      {
+        "name": "read_query",
+        "description": "Executes SELECT statements and returns rows."
+      },
+      {
+        "name": "list_tables",
+        "description": "Lists all available tables and schemas."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"mysql\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"mysql-mcp-server\"\n      ],\n      \"env\": {\n        \"MYSQL_HOST\": \"localhost\",\n        \"MYSQL_USER\": \"root\",\n        \"MYSQL_PASSWORD\": \"password\",\n        \"MYSQL_DATABASE\": \"app_db\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y mysql-mcp-server",
+    "downloadUrl": "https://github.com/designcomputer/mysql_mcp_server/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-supabase",
+    "name": "Supabase Cloud Backend MCP",
+    "owner": "supabase-community",
+    "repo": "supabase-mcp",
+    "category": "Databases & Storage",
+    "stars": 8400,
+    "downloads": "450K+",
+    "growthRate": "+31% this week",
+    "tags": [
+      "supabase",
+      "postgres",
+      "auth",
+      "storage",
+      "edge-functions"
+    ],
+    "shortDescription": "Connects AI assistants to Supabase projects to query tables, inspect database migrations, generate Edge Functions, and manage storage buckets.",
+    "fullUseCase": "### Executive Problem & Solution\nSupabase powers modern mobile and web backends, integrating Postgres, authentication, storage, and serverless Edge Functions into a unified dashboard.\n\nThe Supabase MCP Server allows AI agents to inspect your database schema, draft Row Level Security (RLS) policies, deploy Edge Functions, and query project tables directly.",
+    "toolsProvided": [
+      {
+        "name": "query_database",
+        "description": "Executes SQL statements via Supabase connection."
+      },
+      {
+        "name": "list_buckets",
+        "description": "Lists file storage buckets."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"supabase\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@supabase/mcp-server\"\n      ],\n      \"env\": {\n        \"SUPABASE_PROJECT_REF\": \"your-ref\",\n        \"SUPABASE_SERVICE_ROLE_KEY\": \"your-key\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y @supabase/mcp-server",
+    "downloadUrl": "https://github.com/supabase-community/supabase-mcp/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-pinecone",
+    "name": "Pinecone Vector Database MCP",
+    "owner": "pinecone-io",
+    "repo": "pinecone-mcp",
+    "category": "Databases & Storage",
+    "stars": 6200,
+    "downloads": "380K+",
+    "growthRate": "+24% this week",
+    "tags": [
+      "pinecone",
+      "vector-database",
+      "embeddings",
+      "semantic-search",
+      "rag"
+    ],
+    "shortDescription": "Enables AI agents to query Pinecone vector indexes, perform approximate nearest neighbor similarity searches, and upsert high-dimensional embeddings.",
+    "fullUseCase": "### Executive Problem & Solution\nVector search is fundamental to enterprise RAG architectures, recommendation systems, and semantic search. Connecting AI agents directly to vector stores allows them to retrieve semantically related documents autonomously without custom middle-tier APIs.",
+    "toolsProvided": [
+      {
+        "name": "query_vector",
+        "description": "Searches vector index for top-k nearest neighbors."
+      },
+      {
+        "name": "upsert_vector",
+        "description": "Inserts or updates vector records with metadata."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"pinecone\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"pinecone-mcp-server\"\n      ],\n      \"env\": {\n        \"PINECONE_API_KEY\": \"your-api-key\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y pinecone-mcp-server",
+    "downloadUrl": "https://github.com/pinecone-io/pinecone-mcp/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-kubernetes",
+    "name": "Kubernetes Cluster MCP Server",
+    "owner": "strowk",
+    "repo": "mcp-k8s",
+    "category": "Cloud & DevOps",
+    "stars": 5400,
+    "downloads": "290K+",
+    "growthRate": "+22% this week",
+    "tags": [
+      "kubernetes",
+      "k8s",
+      "devops",
+      "helm",
+      "pods",
+      "clusters"
+    ],
+    "shortDescription": "Gives AI models read and diagnostic access to Kubernetes clusters to inspect pod statuses, stream container logs, analyze ingress events, and debug failures.",
+    "fullUseCase": "### Executive Problem & Solution\nDiagnosing issues in large Kubernetes clusters with dozens of namespaces and hundreds of pods can take hours. Engineers constantly run kubectl describe pod, kubectl logs, and inspect events to find crash reasons.\n\nThe Kubernetes MCP Server connects AI agents directly to your kubeconfig context. The agent can summarize cluster health, isolate crashing pods, analyze OOMKill events, and diagnose DNS resolution errors.",
+    "toolsProvided": [
+      {
+        "name": "get_pods",
+        "description": "Lists pods across namespaces with health statuses."
+      },
+      {
+        "name": "get_pod_logs",
+        "description": "Streams container logs from a specific pod."
+      },
+      {
+        "name": "describe_resource",
+        "description": "Returns deep configuration and event logs for any K8s resource."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"kubernetes\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"mcp-k8s\"\n      ]\n    }\n  }\n}",
+    "installGuide": "npx -y mcp-k8s",
+    "downloadUrl": "https://github.com/strowk/mcp-k8s/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-sentry",
+    "name": "Sentry Crash & Error Tracking MCP",
+    "owner": "modelcontextprotocol",
+    "repo": "servers",
+    "category": "Developer Tools",
+    "stars": 39200,
+    "downloads": "580K+",
+    "growthRate": "+19% this week",
+    "tags": [
+      "sentry",
+      "errors",
+      "debugging",
+      "monitoring",
+      "observability"
+    ],
+    "shortDescription": "Enables AI agents to query production application errors, inspect stack traces, analyze user impact, and draft root-cause bug fixes.",
+    "fullUseCase": "### Executive Problem & Solution\nWhen software crashes in production, Sentry captures stack traces and environment metadata. Developers must manually sift through hundreds of error events to identify the root cause.\n\nThe Sentry MCP Server allows AI assistants to fetch active issues, inspect full stack traces, analyze browser/OS distributions, and correlate error spikes with recent git deployments.",
+    "toolsProvided": [
+      {
+        "name": "list_issues",
+        "description": "Retrieves unresolved error issues from Sentry project."
+      },
+      {
+        "name": "get_issue_details",
+        "description": "Returns full stack trace and metadata for an issue ID."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"sentry\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"@modelcontextprotocol/server-sentry\"\n      ],\n      \"env\": {\n        \"SENTRY_AUTH_TOKEN\": \"your-token\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y @modelcontextprotocol/server-sentry",
+    "downloadUrl": "https://github.com/modelcontextprotocol/servers/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-notion",
+    "name": "Notion Workspace MCP Server",
+    "owner": "suekou",
+    "repo": "mcp-notion-server",
+    "category": "Communication & Productivity",
+    "stars": 7600,
+    "downloads": "620K+",
+    "growthRate": "+26% this week",
+    "tags": [
+      "notion",
+      "notes",
+      "docs",
+      "knowledge-base",
+      "productivity"
+    ],
+    "shortDescription": "Allows AI assistants to search Notion workspace databases, read pages, create new documentation, and append structured task notes.",
+    "fullUseCase": "### Executive Problem & Solution\nCompany roadmaps, team wikis, and project tasks are often housed in Notion. Manually copying documentation between Notion and code editors slows down engineering workflows.\n\nThe Notion MCP Server gives AI assistants full read and write capabilities across permitted Notion pages and databases, enabling automated sprint summaries and meeting note synthesis.",
+    "toolsProvided": [
+      {
+        "name": "search_pages",
+        "description": "Searches Notion workspace for pages and database items."
+      },
+      {
+        "name": "create_page",
+        "description": "Creates a new page with markdown block contents."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"notion\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"mcp-notion-server\"\n      ],\n      \"env\": {\n        \"NOTION_API_TOKEN\": \"secret_your_token\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y mcp-notion-server",
+    "downloadUrl": "https://github.com/suekou/mcp-notion-server/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "mcp-linear",
+    "name": "Linear Issue Tracking MCP Server",
+    "owner": "jerhadf",
+    "repo": "linear-mcp-server",
+    "category": "Developer Tools",
+    "stars": 4800,
+    "downloads": "320K+",
+    "growthRate": "+21% this week",
+    "tags": [
+      "linear",
+      "project-management",
+      "issues",
+      "sprints",
+      "agile"
+    ],
+    "shortDescription": "Enables AI models to search Linear tickets, inspect project backlogs, create issues, update issue states, and summarize sprint progress.",
+    "fullUseCase": "### Executive Problem & Solution\nFast-moving software teams rely on Linear for bug tracking and sprint planning. Developers often have to interrupt coding flow to update ticket descriptions, add acceptance criteria, or assign priorities.\n\nThe Linear MCP Server allows AI assistants to manage issues directly through conversational commands, like \"Create a ticket for the PostgreSQL index migration and assign it to the Current Sprint\".",
+    "toolsProvided": [
+      {
+        "name": "search_issues",
+        "description": "Searches Linear issues by title, team, and state."
+      },
+      {
+        "name": "create_issue",
+        "description": "Creates a new Linear issue with priority and labels."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"linear\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"-y\",\n        \"linear-mcp-server\"\n      ],\n      \"env\": {\n        \"LINEAR_API_KEY\": \"lin_api_your_key\"\n      }\n    }\n  }\n}",
+    "installGuide": "npx -y linear-mcp-server",
+    "downloadUrl": "https://github.com/jerhadf/linear-mcp-server/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-autogpt",
+    "name": "AutoGPT: Autonomous AI Agent Architecture",
+    "owner": "Significant-Gravitas",
+    "repo": "AutoGPT",
+    "category": "AI Agents & LLMs",
+    "stars": 168000,
+    "downloads": "18M+",
+    "growthRate": "+8% this week",
+    "tags": [
+      "autonomous-agent",
+      "gpt",
+      "planning",
+      "task-execution",
+      "automation"
+    ],
+    "shortDescription": "The vision of accessible AI for everyone: an autonomous open-source agent framework that attempts to accomplish user-defined goals autonomously.",
+    "fullUseCase": "### Executive Problem & Solution\nSingle-prompt LLMs require constant human guidance and cannot execute long-running, multi-step goals. AutoGPT pioneered autonomous agent loops where the AI writes its own sub-tasks, browses the web, writes code to local files, and executes terminal commands until the objective is reached.",
+    "toolsProvided": [
+      {
+        "name": "autogpt_agent",
+        "description": "Executes autonomous multi-step planning and tool execution loop."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"autogpt\": {\n      \"command\": \"docker\",\n      \"args\": [\n        \"run\",\n        \"-it\",\n        \"autogpt\"\n      ]\n    }\n  }\n}",
+    "installGuide": "git clone https://github.com/Significant-Gravitas/AutoGPT.git",
+    "downloadUrl": "https://github.com/Significant-Gravitas/AutoGPT/archive/refs/heads/master.zip"
+  },
+  {
+    "id": "repo-llamaindex",
+    "name": "LlamaIndex: Data Framework for LLMs",
+    "owner": "run-llama",
+    "repo": "llama_index",
+    "category": "AI Agents & LLMs",
+    "stars": 39500,
+    "downloads": "14M+",
+    "growthRate": "+16% this week",
+    "tags": [
+      "rag",
+      "embeddings",
+      "data-loaders",
+      "vector-index",
+      "knowledge-graphs"
+    ],
+    "shortDescription": "Comprehensive data framework to connect custom data sources (PDFs, docs, databases) to LLM applications with state-of-the-art indexing and retrieval.",
+    "fullUseCase": "### Executive Problem & Solution\nRaw vector search is often inadequate for complex documents with tables, charts, and hierarchical headings. LlamaIndex provides specialized data connectors, parsing strategies, and multi-stage re-ranking algorithms that dramatically boost RAG precision.",
+    "toolsProvided": [
+      {
+        "name": "llama_index_query",
+        "description": "Queries an indexed knowledge base with semantic retrieval and synthesizer."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"llamaindex\": {\n      \"command\": \"python\",\n      \"args\": [\n        \"-m\",\n        \"llama_index\"\n      ]\n    }\n  }\n}",
+    "installGuide": "pip install llama-index",
+    "downloadUrl": "https://github.com/run-llama/llama_index/archive/refs/heads/main.zip"
+  },
+  {
+    "id": "repo-flowise",
+    "name": "Flowise: Drag & Drop UI for LLM Apps",
+    "owner": "FlowiseAI",
+    "repo": "Flowise",
+    "category": "Developer Tools",
+    "stars": 34500,
+    "downloads": "3.2M+",
+    "growthRate": "+19% this week",
+    "tags": [
+      "no-code",
+      "drag-and-drop",
+      "langchain",
+      "visual-builder",
+      "chatbots"
+    ],
+    "shortDescription": "Open-source visual node-based UI to build customized LLM flows, RAG chatbots, and autonomous agents with LangChain and LlamaIndex.",
+    "fullUseCase": "### Executive Problem & Solution\nNon-technical team members and rapid prototypers want to experiment with AI agents without writing Python code. Flowise provides an intuitive browser-based canvas where users connect nodes (models, prompt templates, vector stores, tools) and deploy them via API or embeddable chat widgets.",
+    "toolsProvided": [
+      {
+        "name": "flowise_api",
+        "description": "Executes flow pipelines via REST API."
+      }
+    ],
+    "configSnippet": "{\n  \"mcpServers\": {\n    \"flowise\": {\n      \"command\": \"npx\",\n      \"args\": [\n        \"flowise\",\n        \"start\"\n      ]\n    }\n  }\n}",
+    "installGuide": "npm install -g flowise && flowise start",
+    "downloadUrl": "https://github.com/FlowiseAI/Flowise/archive/refs/heads/main.zip"
+  }
+]

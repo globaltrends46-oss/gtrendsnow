@@ -9,6 +9,50 @@ import {
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import { toast } from 'sonner';
+import defaultRegistry from '@/data/mcp_registry.json';
+
+// In-memory filter/sort function for instant zero-latency rendering
+function filterToolsLocally(items, category, query, sort) {
+  let result = Array.isArray(items) ? [...items] : [];
+  if (category && category !== 'All') {
+    result = result.filter(item => item.category?.toLowerCase() === category.toLowerCase());
+  }
+  let recs = [];
+  if (query && query.trim()) {
+    const raw = query.toLowerCase().trim();
+    const words = raw.replace(/[^\w\s]/g, '').split(/\s+/).filter(w => !['i', 'want', 'to', 'for', 'a', 'an', 'the', 'in', 'and', 'with', 'need', 'how'].includes(w));
+    const scored = result.map(item => {
+      let score = 0;
+      const text = `${item.name} ${item.shortDescription} ${item.fullUseCase} ${(item.tags || []).join(' ')} ${item.category}`.toLowerCase();
+      if (text.includes(raw)) score += 10;
+      for (const w of words) {
+        if (item.name?.toLowerCase().includes(w)) score += 5;
+        if ((item.tags || []).some(t => t?.toLowerCase().includes(w))) score += 4;
+        if (item.category?.toLowerCase().includes(w)) score += 3;
+        if (item.shortDescription?.toLowerCase().includes(w)) score += 2;
+      }
+      return { item, score };
+    });
+    const matched = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+    result = matched.map(m => m.item);
+    if (matched.length > 0 && matched[0].score >= 4) {
+      recs = matched.slice(0, 3).map(m => m.item);
+    }
+  }
+
+  if (sort === 'downloads') {
+    result.sort((a, b) => {
+      const getNum = s => parseFloat(s) * (String(s).includes('M') ? 1000000 : 1000);
+      return getNum(b.downloads || '0') - getNum(a.downloads || '0');
+    });
+  } else if (sort === 'name') {
+    result.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } else {
+    result.sort((a, b) => (b.stars || 0) - (a.stars || 0));
+  }
+
+  return { result, recs };
+}
 
 const CATEGORIES = [
   { id: 'All', label: 'All Repositories & Servers', icon: Layers },
@@ -31,9 +75,10 @@ const SAMPLE_QUERIES = [
 ];
 
 const McpPage = () => {
-  const [tools, setTools] = useState([]);
+  // Pre-populate with defaultRegistry so the table is NEVER empty
+  const [tools, setTools] = useState(() => filterToolsLocally(defaultRegistry, 'All', '', 'stars').result);
   const [recommended, setRecommended] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('stars');
@@ -43,7 +88,6 @@ const McpPage = () => {
   const [copiedId, setCopiedId] = useState(null);
 
   const fetchTools = async () => {
-    setLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedCategory && selectedCategory !== 'All') params.append('category', selectedCategory);
@@ -51,29 +95,35 @@ const McpPage = () => {
       if (sortBy) params.append('sort', sortBy);
 
       let url = `/hcgi/api/mcp?${params.toString()}`;
-      let res = await fetch(url, { signal: AbortSignal.timeout(4000) }).catch(() => null);
+      let res = await fetch(url, { signal: AbortSignal.timeout(3000) }).catch(() => null);
       
       if (!res || !res.ok) {
         url = `/api/mcp?${params.toString()}`;
-        res = await fetch(url, { signal: AbortSignal.timeout(3000) }).catch(() => null);
+        res = await fetch(url, { signal: AbortSignal.timeout(2000) }).catch(() => null);
       }
 
       if (res && res.ok) {
         const data = await res.json();
-        setTools(data.items || []);
-        setRecommended(data.recommended || []);
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          setTools(data.items);
+          setRecommended(data.recommended || []);
+          return;
+        }
       }
     } catch (err) {
-      console.warn('Failed to fetch MCP catalog from API:', err.message);
-    } finally {
-      setLoading(false);
+      console.warn('Backend sync bypassed, using client dataset:', err.message);
     }
+
+    // Instant in-memory fallback
+    const { result, recs } = filterToolsLocally(defaultRegistry, selectedCategory, searchQuery, sortBy);
+    setTools(result);
+    setRecommended(recs);
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchTools();
-    }, 250);
+    }, 200);
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory, sortBy]);
 
@@ -81,11 +131,13 @@ const McpPage = () => {
   const handleDownloadZip = (tool) => {
     toast.info(`Preparing 1-click download for ${tool.name}...`);
     
-    // Create an invisible anchor to trigger backend stream download
-    const downloadUrl = `/hcgi/api/mcp/download/${tool.id}`;
+    // Direct zip url download or backend stream
+    const downloadUrl = tool.downloadUrl || `https://github.com/${tool.owner}/${tool.repo}/archive/refs/heads/main.zip`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = `${tool.repo || tool.id}.zip`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
