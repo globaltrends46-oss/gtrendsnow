@@ -16,6 +16,7 @@ const itemsToCopy = [
   { src: '.htaccess', dest: '.htaccess' },
   { src: 'index.js', dest: 'index.js' },
   { src: 'package.json', dest: 'package.json' },
+  { src: 'tmp/restart.txt', dest: 'tmp/restart.txt' },
   { src: 'node_modules', dest: 'node_modules' }
 ];
 
