@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import './apps/api/src/main.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,32 +30,26 @@ try {
 }
 
 // 2. Start PocketBase process
-logToFile('📦 Launching PocketBase database server...');
-const pbProcess = spawn('./pocketbase', [
-  'serve',
-  '--http=127.0.0.1:8090',
-  '--dir=./pb_data',
-  '--migrationsDir=./pb_migrations',
-  '--hooksDir=./pb_hooks',
-  '--hooksWatch=false'
-], {
-  cwd: path.resolve(__dirname, 'apps/pocketbase'),
-  stdio: 'ignore',
-  detached: true
-});
-
-pbProcess.unref();
-
-pbProcess.on('error', (err) => {
-  logToFile('❌ Failed to start PocketBase process: ' + err.message);
-});
-
-// 3. Start the Express API Server
-logToFile('⚡ Importing main.js (Express API server)...');
-import('./apps/api/src/main.js')
-  .then(() => {
-    logToFile('✅ main.js loaded successfully!');
-  })
-  .catch((err) => {
-    logToFile('❌ Failed to load main.js: ' + err.message + '\n' + err.stack);
+try {
+  logToFile('📦 Launching PocketBase database server...');
+  const pbProcess = spawn('./pocketbase', [
+    'serve',
+    '--http=127.0.0.1:8090',
+    '--dir=./pb_data',
+    '--migrationsDir=./pb_migrations',
+    '--hooksDir=./pb_hooks',
+    '--hooksWatch=false'
+  ], {
+    cwd: path.resolve(__dirname, 'apps/pocketbase'),
+    stdio: 'ignore',
+    detached: true
   });
+
+  pbProcess.unref();
+
+  pbProcess.on('error', (err) => {
+    logToFile('❌ Failed to start PocketBase process: ' + err.message);
+  });
+} catch (err) {
+  logToFile('❌ Exception spawning PocketBase: ' + err.message);
+}
