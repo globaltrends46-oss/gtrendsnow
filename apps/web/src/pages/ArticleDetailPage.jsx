@@ -38,23 +38,20 @@ const ArticleDetailPage = () => {
       try {
         setLoading(true);
 
-        // 1. Check fallback IDs
-        if (id && id.startsWith('fb-')) {
-          const fbArt = fallbackArticles.find(a => a.id === id);
-          if (fbArt) {
-            setArticle(fbArt);
-            setLoading(false);
-            return;
-          }
+        // 1. Instant match in fallback articles and blog posts
+        const fbArt = fallbackArticles.find(a => a.id === id);
+        if (fbArt) {
+          setArticle(fbArt);
+          setLoading(false);
+          return;
         }
-        if (id && id.startsWith('bg-')) {
-          const allBlogPosts = Object.values(fallbackBlogPosts).flat();
-          const fbBlog = allBlogPosts.find(a => a.id === id);
-          if (fbBlog) {
-            setArticle(fbBlog);
-            setLoading(false);
-            return;
-          }
+        
+        const allBlogPosts = Object.values(fallbackBlogPosts).flat();
+        const fbBlog = allBlogPosts.find(a => a.id === id);
+        if (fbBlog) {
+          setArticle(fbBlog);
+          setLoading(false);
+          return;
         }
 
         // 2. Check local storage caches
