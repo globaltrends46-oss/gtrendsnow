@@ -157,17 +157,25 @@ cron.schedule('0 */12 * * *', () => {
 });
 logger.info('12-Hour MCP registry trending updater job scheduled (every 12 hours: 00:00 & 12:00 UTC)');
 
-const port = process.env.PORT || 3001;
+if (typeof PhusionPassenger !== 'undefined') {
+  PhusionPassenger.configure({ autoInstall: false });
+}
 
-logToFile(`📡 Calling app.listen on port: ${port}`);
-app.listen(port, () => {
-	logToFile(`🚀 API Server running on port: ${port}`);
-	logger.info(`🚀 API Server running on http://localhost:${port}`);
+const listenTarget = (typeof PhusionPassenger !== 'undefined')
+  ? 'passenger'
+  : (process.env.PORT || 3001);
 
-	// Anti-Sleep Heartbeat Keep-Alive Interval (pings server every 4 minutes to prevent Hostinger idle sleep)
-	setInterval(() => {
-		fetch(`http://127.0.0.1:${port}/hcgi/api/analytics/stats`).catch(() => {});
-	}, 4 * 60 * 1000);
+logToFile(`📡 Calling app.listen on: ${listenTarget}`);
+app.listen(listenTarget, () => {
+	logToFile(`🚀 API Server running on: ${listenTarget}`);
+	logger.info(`🚀 API Server running on: ${listenTarget}`);
+
+	// Anti-Sleep Heartbeat Keep-Alive Interval
+	if (listenTarget !== 'passenger') {
+		setInterval(() => {
+			fetch(`http://127.0.0.1:${listenTarget}/hcgi/api/analytics/stats`).catch(() => {});
+		}, 4 * 60 * 1000);
+	}
 
 	// Automatic boot check: Trigger a trendjacking article run on server startup to verify publishing
 	setTimeout(() => {
