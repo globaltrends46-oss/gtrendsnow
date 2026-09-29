@@ -20,7 +20,7 @@ const BlogPage = () => {
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [articles, setArticles] = useState(() => {
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_${TABS[0].id}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20260929_${TABS[0].id}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -34,7 +34,7 @@ const BlogPage = () => {
     // 1. Immediately set from cache or fallback data to eliminate skeleton delays
     let initialData = fallbackBlogPosts[category] || [];
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_${category}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20260929_${category}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) initialData = parsed;
@@ -74,7 +74,7 @@ const BlogPage = () => {
           link: `/blog/${record.id}`
         }));
         setArticles(mapped);
-        localStorage.setItem(`gtrends_blog_cache_${category}`, JSON.stringify(mapped));
+        localStorage.setItem(`gtrends_blog_cache_v20260929_${category}`, JSON.stringify(mapped));
         return;
       }
 

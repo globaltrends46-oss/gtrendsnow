@@ -7,6 +7,7 @@ import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import BlogCard from '@/components/BlogCard.jsx';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fallbackBlogPosts, fallbackArticles } from '@/lib/fallbackData.js';
 
 // Very basic Markdown parser for required elements
 const parseMarkdown = (text) => {
@@ -33,35 +34,88 @@ const BlogDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchBlog = async () => {
       try {
         setLoading(true);
-        const record = await pb.collection('blogs').getFirstListItem(`slug="${slug}"`, { $autoCancel: false });
-        
-        // Increment views
-        await pb.collection('blogs').update(record.id, { views: (record.views || 0) + 1 }, { $autoCancel: false });
-        
-        setBlog(record);
 
-        // Fetch related blogs based on first tag
-        if (record.tags && record.tags.length > 0) {
-          const firstTag = record.tags[0];
-          const relatedRecords = await pb.collection('blogs').getList(1, 3, {
-            filter: `tags ~ "${firstTag}" && id != "${record.id}"`,
-            sort: '-created',
-            $autoCancel: false
-          });
-          setRelated(relatedRecords.items);
+        // 1. Instant match in fallbackBlogPosts and fallbackArticles
+        const allFallback = [
+          ...Object.values(fallbackBlogPosts).flat(),
+          ...fallbackArticles
+        ];
+        const fbFound = allFallback.find(item => 
+          item.id === slug || 
+          item.link === `/blog/${slug}` ||
+          item.link === `/articles/${slug}` ||
+          (item.id && slug && item.id.includes(slug))
+        );
+
+        if (fbFound) {
+          if (isMounted) {
+            setBlog(fbFound);
+            setLoading(false);
+          }
+          return;
         }
+
+        // 2. Check local storage blog caches
+        try {
+          for (const cat of ['geopolitics', 'energy', 'tech', 'sports']) {
+            const cached = localStorage.getItem(`gtrends_blog_cache_v20260929_${cat}`) || localStorage.getItem(`gtrends_blog_cache_${cat}`);
+            if (cached) {
+              const list = JSON.parse(cached);
+              const foundInCache = list.find(item => item.id === slug || item.link?.endsWith(slug));
+              if (foundInCache) {
+                if (isMounted) {
+                  setBlog(foundInCache);
+                  setLoading(false);
+                }
+                return;
+              }
+            }
+          }
+        } catch (_) {}
+
+        // 3. Try Express API routes
+        try {
+          let apiRes = await fetch(`/hcgi/api/posts/${slug}`, { signal: AbortSignal.timeout(2000) }).catch(() => null);
+          if (!apiRes || !apiRes.ok) {
+            apiRes = await fetch(`/api/posts/${slug}`, { signal: AbortSignal.timeout(2000) }).catch(() => null);
+          }
+          if (apiRes && apiRes.ok) {
+            const data = await apiRes.json();
+            if (data && (data.item || data.id)) {
+              const item = data.item || data;
+              if (isMounted) {
+                setBlog(item);
+                setLoading(false);
+              }
+              return;
+            }
+          }
+        } catch (_) {}
+
+        // 4. Try PocketBase
+        try {
+          let record = await pb.collection('blog_posts').getOne(slug, { $autoCancel: false }).catch(() => null);
+          if (!record) {
+            record = await pb.collection('blogs').getFirstListItem(`slug="${slug}"`, { $autoCancel: false }).catch(() => null);
+          }
+          if (record && isMounted) {
+            setBlog(record);
+          }
+        } catch (_) {}
       } catch (error) {
         console.error('Error fetching blog:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchBlog();
     window.scrollTo(0, 0);
+    return () => { isMounted = false; };
   }, [slug]);
 
   if (loading) {
@@ -95,13 +149,12 @@ const BlogDetailPage = () => {
   }
 
   const readTime = Math.max(1, Math.ceil((blog.content?.split(' ').length || 0) / 200));
-  const formattedDate = new Date(blog.publishedDate || blog.created).toLocaleDateString('en-US', {
+  const formattedDate = new Date(blog.published_date || blog.publishedAt || blog.publishedDate || blog.created || Date.now()).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric', year: 'numeric'
   });
   
-  const imageUrl = blog.featuredImage 
-    ? pb.files.getUrl(blog, blog.featuredImage)
-    : null;
+  const imageUrl = blog.featured_image || blog.urlToImage || (blog.featuredImage ? (typeof blog.featuredImage === 'string' && blog.featuredImage.startsWith('http') ? blog.featuredImage : pb.files.getUrl(blog, blog.featuredImage)) : null);
+  const blogTags = (blog.tags && blog.tags.length > 0) ? blog.tags : [blog.category || 'Trending'];
 
   return (
     <>
@@ -123,7 +176,7 @@ const BlogDetailPage = () => {
                 </Link>
 
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {blog.tags?.map((tag, idx) => (
+                  {blogTags.map((tag, idx) => (
                     <span key={idx} className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                       {tag}
                     </span>

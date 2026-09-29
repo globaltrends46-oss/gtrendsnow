@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Heart, X, ExternalLink, ShieldCheck, Sparkles, 
   GraduationCap, Briefcase, Users2, CheckCircle2 
@@ -34,7 +35,7 @@ const DonationModal = ({ isOpen, onClose }) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  return (
+  const modalContent = (
     <div 
       className="fixed inset-0 z-[999999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
       onClick={onClose}
@@ -204,6 +205,12 @@ const DonationModal = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 };
 
 export default DonationModal;

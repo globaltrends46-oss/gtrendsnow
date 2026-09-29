@@ -54,23 +54,58 @@ const getCategoryFeaturedImage = (category) => {
  */
 function parseAISubmission(aiOutput, fallbackTitle) {
   try {
-    const jsonMatch = aiOutput.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const data = JSON.parse(jsonMatch[0]);
-      if (data.title && data.content) {
-        return { title: data.title.trim(), content: data.content.trim() };
+    if (!aiOutput || typeof aiOutput !== 'string') {
+      return { title: fallbackTitle, content: '' };
+    }
+    let cleaned = aiOutput.trim();
+    // Strip outer markdown code blocks if wrapped
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    // 1. Direct JSON parse
+    try {
+      const parsed = JSON.parse(cleaned);
+      if (parsed && typeof parsed === 'object') {
+        const title = parsed.title?.trim();
+        const content = parsed.content?.trim();
+        if (title && content) return { title, content };
+      }
+    } catch (_) {}
+
+    // 2. Extract JSON object substring if surrounded by extra text
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      const candidate = cleaned.substring(firstBrace, lastBrace + 1);
+      try {
+        const parsed = JSON.parse(candidate);
+        if (parsed.title && parsed.content) {
+          return { title: parsed.title.trim(), content: parsed.content.trim() };
+        }
+      } catch (_) {
+        // Robust regex extraction for title and content with potential unescaped newlines
+        const tMatch = candidate.match(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+        const cMatch = candidate.match(/"content"\s*:\s*"([\s\S]*)"\s*\}?\s*$/);
+        if (tMatch && cMatch) {
+          let cText = cMatch[1].replace(/"\s*\}?$/, '');
+          return {
+            title: tMatch[1].replace(/\\"/g, '"').trim(),
+            content: cText.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\t/g, '\t').trim()
+          };
+        }
       }
     }
   } catch (e) {
     logger.warn('Failed to parse AI output as JSON, falling back to markdown extraction.');
   }
 
-  // Parse title from markdown title tag (# Heading)
-  const titleMatch = aiOutput.match(/^#+\s+(.+)$/m);
+  // 3. Fallback to markdown header parsing
+  let mdClean = aiOutput.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+  mdClean = mdClean.replace(/^\s*\{\s*"title"\s*:\s*"[^"]*",\s*"content"\s*:\s*"/i, '').replace(/"\s*\}\s*$/i, '');
+  const titleMatch = mdClean.match(/^#+\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1].trim() : fallbackTitle;
-  const content = aiOutput.replace(/^#+\s+.+$/m, '').trim();
+  const content = mdClean.replace(/^#+\s+.+$/m, '').trim();
 
-  return { title, content };
+  return { title, content: content || mdClean };
 }
 
 /**

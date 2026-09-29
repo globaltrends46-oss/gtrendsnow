@@ -152,10 +152,10 @@ cron.schedule('0 9 * * 1', () => {
 });
 logger.info('Weekly newsletter job scheduled (Monday 9 AM UTC)');
 
-cron.schedule('0 3 * * *', () => {
+cron.schedule('0 */12 * * *', () => {
 	updateMcpRegistry(logger).catch(err => logger.error('MCP registry updater failed:', err));
 });
-logger.info('Daily MCP registry star updater job scheduled (3 AM UTC)');
+logger.info('12-Hour MCP registry trending updater job scheduled (every 12 hours: 00:00 & 12:00 UTC)');
 
 const port = process.env.PORT || 3001;
 

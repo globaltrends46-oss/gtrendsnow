@@ -7,21 +7,96 @@ import {
 import apiServerClient from '@/lib/apiServerClient.js';
 import { toast } from 'sonner';
 
-// Markdown-to-HTML converter for PDF print and live preview
+// Robust Markdown-to-HTML converter for PDF print and live preview
 const parseMarkdownToHtml = (text, themeColor = '#1e3a8a') => {
   if (!text) return '';
-  return text
-    .replace(/^### (.*$)/gim, '<h3 style="font-size: 13pt; font-weight: 700; margin-top: 14px; margin-bottom: 4px; color: #1e293b;">$1</h3>')
-    .replace(/^## (.*$)/gim, `<h2 style="font-size: 15pt; font-weight: 700; border-bottom: 1.5px solid ${themeColor}; padding-bottom: 4px; margin-top: 20px; margin-bottom: 8px; color: ${themeColor}; text-transform: uppercase; letter-spacing: 0.5px;">$1</h2>`)
-    .replace(/^# (.*$)/gim, `<h1 style="font-size: 24pt; font-weight: 800; margin-bottom: 4px; color: #0f172a; text-transform: uppercase;">$1</h1>`)
-    .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 700; color: #0f172a;">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em style="font-style: italic;">$1</em>')
-    .replace(/^\- (.*$)/gim, '<li style="margin-bottom: 4px; line-height: 1.5;">$1</li>')
-    .replace(/(<li>.*<\/li>)/g, '<ul style="padding-left: 20px; margin-top: 4px; margin-bottom: 10px;">$1</ul>')
-    .replace(/<\/ul>\s*<ul>/g, '')
-    .replace(/---/g, `<hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 12px 0;" />`)
-    .replace(/\n\n/g, '<p style="margin-bottom: 8px; line-height: 1.5;">')
-    .replace(/\n/g, '<br/>');
+  const lines = text.split('\n');
+  const htmlParts = [];
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const line = rawLine.trim();
+
+    if (!line) {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      continue;
+    }
+
+    // Horizontal rule
+    if (line === '---' || line === '***' || line === '___') {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      htmlParts.push(`<hr style="border: 0; border-top: 1.5px solid #e2e8f0; margin: 12px 0;" />`);
+      continue;
+    }
+
+    // Headings
+    if (line.startsWith('### ')) {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      const headingText = line.substring(4).replace(/\*\*(.*?)\*\*/g, '$1');
+      htmlParts.push(`<h3 style="font-size: 11.5pt; font-weight: 700; margin-top: 12px; margin-bottom: 3px; color: #1e293b; page-break-after: avoid;">${headingText}</h3>`);
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      const headingText = line.substring(3).replace(/\*\*(.*?)\*\*/g, '$1');
+      htmlParts.push(`<h2 style="font-size: 13pt; font-weight: 700; border-bottom: 1.5px solid ${themeColor}; padding-bottom: 3px; margin-top: 16px; margin-bottom: 8px; color: ${themeColor}; text-transform: uppercase; letter-spacing: 0.5px; page-break-after: avoid;">${headingText}</h2>`);
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      if (inList) {
+        htmlParts.push('</ul>');
+        inList = false;
+      }
+      const headingText = line.substring(2).replace(/\*\*(.*?)\*\*/g, '$1');
+      htmlParts.push(`<h1 style="font-size: 20pt; font-weight: 800; margin-bottom: 4px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; page-break-after: avoid;">${headingText}</h1>`);
+      continue;
+    }
+
+    // List items (- or * or •)
+    if (line.startsWith('- ') || line.startsWith('* ') || /^•\s/.test(line)) {
+      if (!inList) {
+        htmlParts.push('<ul style="padding-left: 20px; margin-top: 3px; margin-bottom: 8px; list-style-type: disc;">');
+        inList = true;
+      }
+      let itemContent = line.replace(/^[-*•]\s*/, '');
+      itemContent = itemContent
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 700; color: #0f172a;">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em style="font-style: italic;">$1</em>');
+      htmlParts.push(`<li style="margin-bottom: 3px; line-height: 1.45; page-break-inside: avoid;">${itemContent}</li>`);
+      continue;
+    }
+
+    // Normal paragraph line
+    if (inList) {
+      htmlParts.push('</ul>');
+      inList = false;
+    }
+
+    const pContent = line
+      .replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 700; color: #0f172a;">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em style="font-style: italic;">$1</em>');
+
+    htmlParts.push(`<p style="margin-bottom: 6px; line-height: 1.45; color: #1e293b; page-break-inside: avoid;">${pContent}</p>`);
+  }
+
+  if (inList) {
+    htmlParts.push('</ul>');
+  }
+
+  return htmlParts.join('\n');
 };
 
 const COLOR_THEMES = {
@@ -89,6 +164,9 @@ const ResumeBuilder = () => {
     suggestions: []
   });
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState(null);
+  const [showExtractedText, setShowExtractedText] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -105,50 +183,83 @@ const ResumeBuilder = () => {
     }));
   };
 
-  // Robust File Upload Handler (PDF, DOCX, TXT)
-  const handleFileUpload = (e) => {
+  // Multi-Format File Upload Handler (.PDF, .DOCX, .DOC, .TXT, .MD)
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadedFileName(file.name);
     setError(null);
+    setIsUploadingFile(true);
+    setUploadedFileName(file.name);
 
-    const ext = file.name.split('.').pop()?.toLowerCase();
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const isTextFile = ext === 'txt' || ext === 'md' || file.type === 'text/plain';
 
-    if (ext === 'txt' || ext === 'md' || file.type === 'text/plain') {
+    // Fast local reader for plain text files
+    if (isTextFile) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const text = event.target?.result || '';
-        setFormData(prev => ({ ...prev, currentCvText: text }));
-        toast.success(`Loaded text file: ${file.name}`);
-      };
-      reader.readAsText(file);
-    } else {
-      // For PDF / Word files, extract plain text strings using FileReader binary/text stream
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const buffer = event.target?.result;
-        if (typeof buffer === 'string') {
-          // Extract readable ascii strings
-          const cleanText = buffer
-            .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
-
-          if (cleanText.length > 80) {
-            setFormData(prev => ({ ...prev, currentCvText: cleanText }));
-            toast.success(`Extracted content from ${file.name}`);
-            return;
-          }
-        }
-        // Fallback prompt for clean text pasting
+        const text = String(event.target?.result || '').trim();
+        const wordCount = text.split(/\s+/).filter(Boolean).length;
         setFormData(prev => ({
           ...prev,
-          currentCvText: prev.currentCvText || `[Attached: ${file.name}]\n\n(Tip: Paste your CV text here if your document contains specialized formatting)`
+          currentCvText: text,
+          name: prev.name || text.split('\n')[0]?.replace(/^[#*\s]+|[#*\s]+$/g, '').slice(0, 50) || ''
         }));
-        toast.info(`Uploaded: ${file.name}. You can also paste text below.`);
+        setUploadedFileInfo({
+          name: file.name,
+          size: file.size,
+          wordCount
+        });
+        setIsUploadingFile(false);
+        toast.success(`Loaded ${file.name} (${wordCount} words)`);
+      };
+      reader.onerror = () => {
+        setIsUploadingFile(false);
+        setError(`Failed to read text file ${file.name}`);
       };
       reader.readAsText(file);
+      return;
+    }
+
+    // For PDF, Word (.docx, .doc), use backend document parser endpoint
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      const response = await apiServerClient.fetch('/generate-cv/upload', {
+        method: 'POST',
+        body: uploadFormData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success && data.text) {
+        setFormData(prev => ({
+          ...prev,
+          currentCvText: data.text,
+          name: prev.name || data.detectedName || '',
+          targetJobTitle: prev.targetJobTitle || data.detectedTitle || ''
+        }));
+        setUploadedFileInfo({
+          name: file.name,
+          size: file.size,
+          wordCount: data.wordCount || data.text.split(/\s+/).filter(Boolean).length
+        });
+        toast.success(`Extracted ${data.wordCount || ''} words from ${file.name}!`);
+      } else {
+        throw new Error(data.error || 'Failed to extract text from document');
+      }
+    } catch (uploadErr) {
+      console.warn('Document parse issue:', uploadErr.message);
+      setError(`Could not extract text from ${file.name}: ${uploadErr.message}. You can paste your resume text below directly.`);
+      toast.error(`Could not read ${file.name}. Please paste text into the box below.`);
+    } finally {
+      setIsUploadingFile(false);
     }
   };
 
@@ -291,8 +402,10 @@ ${formData.certifications ? `- **Certifications:** ${formData.certifications}` :
             body { ${fontObj.css} }
             ${templateCss}
             @media print {
-              body { margin: 0; padding: 15mm 15mm; }
+              body { margin: 0; padding: 12mm 15mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               @page { size: letter; margin: 0; }
+              h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+              li, p { page-break-inside: avoid; break-inside: avoid; }
             }
           </style>
         </head>
@@ -465,8 +578,12 @@ ${formData.certifications ? `- **Certifications:** ${formData.certifications}` :
                 </label>
 
                 <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40 transition-all rounded-xl p-6 text-center cursor-pointer group"
+                  onClick={() => !isUploadingFile && fileInputRef.current?.click()}
+                  className={`border-2 border-dashed transition-all rounded-xl p-6 text-center cursor-pointer group ${
+                    isUploadingFile 
+                      ? 'border-primary/50 bg-primary/5 cursor-wait' 
+                      : 'border-border hover:border-primary/60 bg-muted/20 hover:bg-muted/40'
+                  }`}
                 >
                   <input 
                     type="file" 
@@ -474,30 +591,81 @@ ${formData.certifications ? `- **Certifications:** ${formData.certifications}` :
                     onChange={handleFileUpload} 
                     accept=".pdf,.docx,.doc,.txt,.md" 
                     className="hidden" 
+                    disabled={isUploadingFile}
                   />
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                    <Upload className="w-6 h-6" />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {uploadedFileName ? uploadedFileName : "Click to select your CV file"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Supports <span className="font-semibold text-foreground">.PDF, .DOCX, .DOC, .TXT</span>
-                  </p>
+                  {isUploadingFile ? (
+                    <div className="py-2">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-foreground">Parsing CV with document engine...</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Extracting full text and ATS structure</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {uploadedFileName ? uploadedFileName : "Click to select or drop your CV file"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Supports <span className="font-semibold text-foreground">.PDF, .DOCX, .DOC, .TXT, .MD</span>
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {uploadedFileName && (
-                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs font-semibold text-emerald-400">
-                    <div className="flex items-center gap-2">
-                      <FileCheck className="w-4 h-4" />
-                      <span>Loaded: {uploadedFileName}</span>
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl space-y-2 text-xs font-semibold text-emerald-400">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FileCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="truncate max-w-[200px] sm:max-w-xs">{uploadedFileName}</span>
+                        {uploadedFileInfo?.wordCount ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-normal shrink-0">
+                            {uploadedFileInfo.wordCount} words
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowExtractedText(!showExtractedText)}
+                          className="text-primary hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          {showExtractedText ? 'Hide Text' : 'Review & Edit'}
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setUploadedFileName('');
+                            setUploadedFileInfo(null);
+                            setShowExtractedText(false);
+                            setFormData(p => ({ ...p, currentCvText: '' }));
+                          }}
+                          className="text-muted-foreground hover:text-destructive transition-colors text-xs"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => { setUploadedFileName(''); setFormData(p => ({ ...p, currentCvText: '' })); }}
-                      className="text-muted-foreground hover:text-foreground text-xs"
-                    >
-                      Remove
-                    </button>
+
+                    {showExtractedText && (
+                      <div className="pt-2 border-t border-emerald-500/20 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground font-normal">Extracted Content (editable):</span>
+                          <span className="text-[11px] text-muted-foreground font-normal">{formData.currentCvText?.length || 0} characters</span>
+                        </div>
+                        <textarea
+                          name="currentCvText"
+                          value={formData.currentCvText}
+                          onChange={handleInputChange}
+                          rows="6"
+                          placeholder="Your extracted resume content..."
+                          className="w-full px-3 py-2 bg-background/90 text-foreground border border-border rounded-lg text-xs leading-relaxed focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

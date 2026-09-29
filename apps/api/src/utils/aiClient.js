@@ -4,42 +4,90 @@ import fetch from 'node-fetch';
 import logger from './logger.js';
 
 /**
- * Universal AI client supporting OmniRoute, Groq, OpenRouter, Gemini, and OpenAI with automated synthesis failover.
+ * Robust extractor for Server-Sent Events (SSE) stream chunks and standard JSON responses.
+ * Ensures compatibility with OmniRoute streaming defaults without throwing JSON parse errors.
+ */
+export function extractContentFromSSEResponse(rawText) {
+  if (!rawText || typeof rawText !== 'string') return '';
+
+  // 1. Try standard JSON first (when stream: false is respected)
+  try {
+    const data = JSON.parse(rawText.trim());
+    if (data.choices && data.choices[0]) {
+      const msg = data.choices[0].message || data.choices[0].delta;
+      if (msg && msg.content) return msg.content;
+      if (msg && msg.text) return msg.text;
+      if (data.choices[0].text) return data.choices[0].text;
+      if (msg && msg.reasoning_content) return msg.reasoning_content;
+    }
+  } catch (e) {
+    // Not standard JSON, proceed to SSE parsing
+  }
+
+  // 2. Parse Server-Sent Events (SSE) stream chunks
+  let content = '';
+  const lines = rawText.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('data: ') || trimmed === 'data: [DONE]') continue;
+
+    try {
+      const jsonStr = trimmed.substring(6).trim();
+      const chunk = JSON.parse(jsonStr);
+
+      if (chunk.choices && chunk.choices[0]) {
+        const c = chunk.choices[0];
+        const delta = c.delta || c.message;
+        if (delta && delta.content) {
+          content += delta.content;
+        } else if (delta && delta.text) {
+          content += delta.text;
+        } else if (c.text) {
+          content += c.text;
+        }
+      }
+    } catch (e) {
+      // Ignore individual malformed chunk errors
+    }
+  }
+
+  return content || rawText;
+}
+
+/**
+ * Universal AI client supporting OmniRoute (auto/best-fast) and Google Gemini (gemini-2.5-flash)
+ * with automated failover and autonomous synthesis safety net.
  */
 export async function generateTextWithAI(prompt, loggerInstance = null, context = {}) {
   const activeLogger = loggerInstance || logger;
 
-  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_KEY || process.env.OMNI_API_KEY || process.env.OPENROUTER_API_KEY || 'sk-114afa90af2eef95-1a4549-2d417547')?.trim();
-  const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_NEW)?.trim();
-  const groqKey = (process.env.GROQ_API_KEY)?.trim();
-  const openaiKey = (process.env.OPENAI_API_KEY)?.trim();
+  const omniKey = (process.env.OMNIROUTE_API_KEY || process.env.OMNIROUTE_KEY || 'sk-omniroute-vigil-qc-production')?.trim();
+  const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_NEW || process.env.GOOGLE_API_KEY)?.trim();
+  const openrouterKey = (process.env.OPENROUTER_API_KEY)?.trim();
 
-  // 1. Try OmniRoute Gateway (gateway.gtrendsnow.com) first if key is present
+  // 1. Primary: OmniRoute AI Gateway
   if (omniKey) {
-    const candidateBaseUrls = [];
-    if (process.env.OMNIROUTE_BASE_URL) {
-      candidateBaseUrls.push(process.env.OMNIROUTE_BASE_URL.replace(/\/$/, ''));
-    }
-    // Hardcoded primary subdomain
-    candidateBaseUrls.push('https://gateway.gtrendsnow.com/v1');
-    candidateBaseUrls.push('https://openrouter.ai/api/v1');
-    candidateBaseUrls.push('https://api.openai.com/v1');
+    const baseUrls = [
+      process.env.OMNIROUTE_BASE_URL?.replace(/\/$/, '') || 'http://127.0.0.1:20128/v1'
+    ];
+    const uniqueBaseUrls = Array.from(new Set(baseUrls));
+    const models = [
+      process.env.OMNIROUTE_MODEL || 'auto/best-fast',
+      'auto/best-free'
+    ];
+    const uniqueModels = Array.from(new Set(models));
 
-    const candidateModels = process.env.OMNIROUTE_MODEL 
-      ? [process.env.OMNIROUTE_MODEL] 
-      : ['gemini/gemini-2.5-flash', 'gemini/gemini-3.5-flash', 'auto/fast'];
-
-    for (const baseUrl of candidateBaseUrls) {
-      const modelsToTry = baseUrl.includes('gateway.gtrendsnow.com') 
-        ? candidateModels 
-        : [process.env.OMNIROUTE_MODEL || 'google/gemini-2.5-flash'];
-
-      for (const model of modelsToTry) {
+    for (const baseUrl of uniqueBaseUrls) {
+      for (const model of uniqueModels) {
         try {
-          activeLogger.info(`🤖 Attempting AI generation via OmniRoute gateway [${baseUrl}] with model [${model}]...`);
+          activeLogger.info(`🤖 Attempting AI generation via OmniRoute [${baseUrl}] model [${model}]...`);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 28000);
+
           const response = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
-            signal: AbortSignal.timeout(35000),
+            signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${omniKey}`,
@@ -54,33 +102,35 @@ export async function generateTextWithAI(prompt, loggerInstance = null, context 
             })
           });
 
+          clearTimeout(timeoutId);
+
           if (response.ok) {
-            const data = await response.json();
-            const content = data.choices?.[0]?.message?.content;
-            if (content) {
+            const rawText = await response.text();
+            const content = extractContentFromSSEResponse(rawText);
+            if (content && content.trim()) {
               activeLogger.info(`✅ OmniRoute AI generation successful via [${baseUrl}] using [${model}]!`);
               return content;
             }
           } else {
             const errText = await response.text();
-            activeLogger.warn(`⚠️ Gateway error at [${baseUrl}] (${response.status}): ${errText.substring(0, 120)}`);
+            activeLogger.warn(`⚠️ OmniRoute returned HTTP ${response.status}: ${errText.substring(0, 120)}`);
           }
         } catch (err) {
-          activeLogger.warn(`⚠️ Gateway request failed at [${baseUrl}] with [${model}]: ${err.message}`);
+          activeLogger.warn(`⚠️ OmniRoute request failed at [${baseUrl}] [${model}]: ${err.message}`);
         }
       }
     }
   }
 
-  // 3. Fall back to Google Gemini API
+  // 2. Secondary: Direct Google Gemini API (gemini-2.5-flash)
   if (geminiKey) {
     try {
-      activeLogger.info('🤖 Attempting AI generation via Google Gemini API...');
+      activeLogger.info('🤖 Attempting AI generation via Google Gemini API (gemini-2.5-flash)...');
       const genAI = new GoogleGenerativeAI(geminiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const result = await model.generateContent(prompt);
       const text = result.response.text();
-      if (text) {
+      if (text && text.trim()) {
         activeLogger.info('✅ Gemini AI generation successful!');
         return text;
       }
@@ -89,54 +139,39 @@ export async function generateTextWithAI(prompt, loggerInstance = null, context 
     }
   }
 
-  // 4. Fallback: If omniKey is actually a Gemini key (starts with AIzaSy)
-  if (omniKey && omniKey.startsWith('AIzaSy')) {
+  // 3. Tertiary: OpenRouter Unified API
+  if (openrouterKey) {
     try {
-      activeLogger.info('🤖 Attempting fallback generation treating OMNIROUTE_KEY as Gemini API Key...');
-      const genAI = new GoogleGenerativeAI(omniKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (text) {
-        activeLogger.info('✅ Gemini fallback AI generation successful!');
-        return text;
-      }
-    } catch (err) {
-      activeLogger.error(`❌ Gemini fallback request failed: ${err.message}`);
-    }
-  }
-
-  // 5. Try OpenAI API if key is present
-  if (openaiKey) {
-    try {
-      activeLogger.info('🤖 Attempting AI generation via OpenAI API...');
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      activeLogger.info('🤖 Attempting AI generation via OpenRouter API...');
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey}`
+          'Authorization': `Bearer ${openrouterKey}`,
+          'HTTP-Referer': 'https://gtrendsnow.com',
+          'X-Title': 'GTrends Global'
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7
         })
       });
+
       if (response.ok) {
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-        if (content) {
-          activeLogger.info('✅ OpenAI generation successful!');
+        const raw = await response.text();
+        const content = extractContentFromSSEResponse(raw);
+        if (content && content.trim()) {
+          activeLogger.info('✅ OpenRouter AI generation successful!');
           return content;
         }
       }
     } catch (err) {
-      activeLogger.warn(`⚠️ OpenAI request failed: ${err.message}`);
+      activeLogger.warn(`⚠️ OpenRouter request failed: ${err.message}`);
     }
   }
 
-  // 6. Autonomous Real-Time Synthesis Fallback:
-  // If external AI APIs fail or are offline, generate publication-grade analysis from real-time news data
+  // 4. Autonomous Real-Time Synthesis Fallback (Guarantees publication never drops)
   activeLogger.warn('⚡ Using Autonomous Real-Time News Synthesis Engine for publication...');
   return synthesizeTrendArticle(context);
 }
@@ -149,7 +184,6 @@ function synthesizeTrendArticle(context = {}) {
   const newsTitle = context.newsTitle || `${keyword}: Breaking Developments and Strategic Impact`;
   const newsSource = context.newsSource || 'Global Intelligence Network';
   const traffic = context.traffic || '50,000+';
-  const category = context.category || 'trendjacking';
 
   const cleanKeyword = keyword.charAt(0).toUpperCase() + keyword.slice(1);
 
@@ -208,3 +242,8 @@ For investors, corporate leaders, and informed readers tracking this cycle, thre
 *Stay tuned to GTrends Global for ongoing updates, data telemetry, and investigative coverage as this story continues to unfold.*`
   });
 }
+
+export default {
+  extractContentFromSSEResponse,
+  generateTextWithAI
+};

@@ -7,7 +7,14 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.resolve(rootDir, 'dist');
 
-console.log('📦 Running deployment copy script...');
+// Touch tmp/restart.txt with current ISO timestamp to guarantee Passenger restarts
+try {
+  const restartPath = path.resolve(rootDir, 'tmp/restart.txt');
+  fs.mkdirSync(path.dirname(restartPath), { recursive: true });
+  fs.writeFileSync(restartPath, `${new Date().toISOString()}\n`, 'utf-8');
+} catch (e) {
+  console.warn('⚠️ Could not touch tmp/restart.txt:', e.message);
+}
 
 const itemsToCopy = [
   { src: 'apps/api', dest: 'apps/api', filter: (src) => !src.includes('node_modules') },
@@ -17,7 +24,8 @@ const itemsToCopy = [
   { src: 'index.js', dest: 'index.js' },
   { src: 'package.json', dest: 'package.json' },
   { src: 'tmp/restart.txt', dest: 'tmp/restart.txt' },
-  { src: 'node_modules', dest: 'node_modules' }
+  { src: 'node_modules', dest: 'node_modules' },
+  { src: 'hcgi', dest: 'hcgi' }
 ];
 
 try {

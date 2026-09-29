@@ -56,7 +56,7 @@ const ArticleDetailPage = () => {
 
         // 2. Check local storage caches
         try {
-          const artCache = localStorage.getItem('gtrends_articles_cache');
+          const artCache = localStorage.getItem('gtrends_articles_cache_v20260929') || localStorage.getItem('gtrends_articles_cache');
           if (artCache) {
             const parsed = JSON.parse(artCache);
             const found = parsed.find(a => a.id === id);
@@ -68,7 +68,7 @@ const ArticleDetailPage = () => {
           }
 
           ['geopolitics', 'energy', 'tech', 'sports'].forEach(cat => {
-            const blogCache = localStorage.getItem(`gtrends_blog_cache_${cat}`);
+            const blogCache = localStorage.getItem(`gtrends_blog_cache_v20260929_${cat}`) || localStorage.getItem(`gtrends_blog_cache_${cat}`);
             if (blogCache) {
               const parsed = JSON.parse(blogCache);
               const found = parsed.find(a => a.id === id);

@@ -11,7 +11,7 @@ import { fallbackArticles } from '@/lib/fallbackData.js';
 const ArticlesPage = () => {
   const [articles, setArticles] = useState(() => {
     try {
-      const cached = localStorage.getItem('gtrends_articles_cache');
+      const cached = localStorage.getItem('gtrends_articles_cache_v20260929');
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -32,7 +32,7 @@ const ArticlesPage = () => {
             const data = await apiRes.json();
             if (isMounted && Array.isArray(data.items) && data.items.length > 0) {
               setArticles(data.items);
-              localStorage.setItem('gtrends_articles_cache', JSON.stringify(data.items));
+              localStorage.setItem('gtrends_articles_cache_v20260929', JSON.stringify(data.items));
               return;
             }
           }
@@ -44,7 +44,7 @@ const ArticlesPage = () => {
               const data2 = await apiRes2.json();
               if (isMounted && Array.isArray(data2.items) && data2.items.length > 0) {
                 setArticles(data2.items);
-                localStorage.setItem('gtrends_articles_cache', JSON.stringify(data2.items));
+                localStorage.setItem('gtrends_articles_cache_v20260929', JSON.stringify(data2.items));
                 return;
               }
             }
@@ -67,7 +67,7 @@ const ArticlesPage = () => {
 
         if (isMounted && records?.items?.length > 0) {
           setArticles(records.items);
-          localStorage.setItem('gtrends_articles_cache', JSON.stringify(records.items));
+          localStorage.setItem('gtrends_articles_cache_v20260929', JSON.stringify(records.items));
         }
       } catch (err) {
         console.warn('Network sync bypassed, retaining cached/fallback articles');
