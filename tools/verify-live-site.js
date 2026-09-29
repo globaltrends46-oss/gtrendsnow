@@ -10,14 +10,28 @@ async function runVerification() {
   console.log('🚀 Launching Playwright browser to test https://gtrendsnow.com live...');
   
   const browser = await chromium.launch({
-    headless: true
+    headless: true,
+    args: [
+      '--disable-blink-features=AutomationControlled',
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-web-security'
+    ]
   });
   
   const context = await browser.newContext({
-    viewport: { width: 1440, height: 900 }
+    viewport: { width: 1440, height: 900 },
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    locale: 'en-US'
   });
   
   const page = await context.newPage();
+
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => false,
+    });
+  });
 
   // Track errors and failed network responses
   const failedRequests = [];
@@ -32,7 +46,7 @@ async function runVerification() {
     // TEST 1: HOME PAGE & DONATION MODAL
     // ------------------------------------------------------------------
     console.log('🌐 1. Navigating to https://gtrendsnow.com...');
-    await page.goto('https://gtrendsnow.com', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://gtrendsnow.com', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(2000);
     
     // Screenshot Home page
@@ -69,7 +83,7 @@ async function runVerification() {
     // TEST 2: MCP DIRECTORY & LIVE GITHUB SEARCH
     // ------------------------------------------------------------------
     console.log('🔍 2. Navigating to https://gtrendsnow.com/mcp...');
-    await page.goto('https://gtrendsnow.com/mcp', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://gtrendsnow.com/mcp', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(2000);
 
     const mcpInitialScreenshot = path.join(artifactDir, 'live_mcp_initial.png');
@@ -94,7 +108,7 @@ async function runVerification() {
     // TEST 3: ARTICLES PAGE
     // ------------------------------------------------------------------
     console.log('📰 3. Navigating to https://gtrendsnow.com/articles...');
-    await page.goto('https://gtrendsnow.com/articles', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://gtrendsnow.com/articles', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(2000);
 
     const articlesScreenshot = path.join(artifactDir, 'live_articles.png');
@@ -109,7 +123,7 @@ async function runVerification() {
     // TEST 4: BLOG PAGE
     // ------------------------------------------------------------------
     console.log('📚 4. Navigating to https://gtrendsnow.com/blog...');
-    await page.goto('https://gtrendsnow.com/blog', { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto('https://gtrendsnow.com/blog', { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(2000);
 
     const blogScreenshot = path.join(artifactDir, 'live_blog.png');
