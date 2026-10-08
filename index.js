@@ -1,3 +1,9 @@
+if (typeof PhusionPassenger !== 'undefined') {
+  try {
+    PhusionPassenger.configure({ autoInstall: false });
+  } catch (e) {}
+}
+
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';

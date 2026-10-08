@@ -11,7 +11,16 @@
 <IfModule mod_rewrite.c>
 	RewriteEngine On
 	RewriteBase /
-	RewriteCond %{REQUEST_URI} !^/hcgi
+
+	# 1. Canonical Redirect: Route apex domain (gtrendsnow.com) to CDN-accelerated www.gtrendsnow.com
+	RewriteCond %{HTTP_HOST} ^gtrendsnow\.com$ [NC]
+	RewriteRule ^(.*)$ https://www.gtrendsnow.com/$1 [R=301,L]
+
+	# 2. Exclude backend API routes
+	RewriteCond %{REQUEST_URI} ^/hcgi [NC]
+	RewriteRule .* - [L]
+
+	# 3. SPA Fallback routing for React Router
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ^ index.html [L]

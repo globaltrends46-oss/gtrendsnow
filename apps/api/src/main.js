@@ -158,14 +158,19 @@ cron.schedule('0 */12 * * *', () => {
 logger.info('12-Hour MCP registry trending updater job scheduled (every 12 hours: 00:00 & 12:00 UTC)');
 
 if (typeof PhusionPassenger !== 'undefined') {
-  PhusionPassenger.configure({ autoInstall: false });
+  try {
+    PhusionPassenger.configure({ autoInstall: false });
+  } catch (e) {}
 }
 
-const listenTarget = (typeof PhusionPassenger !== 'undefined')
-  ? 'passenger'
-  : (process.env.PORT || 3001);
+const isPassenger = (typeof PhusionPassenger !== 'undefined') || 
+                    !!process.env.PASSENGER_APP_ENV || 
+                    !!process.env.PASSENGER_BASE_URI || 
+                    (process.cwd().includes('u516356423'));
 
-logToFile(`📡 Calling app.listen on: ${listenTarget}`);
+const listenTarget = isPassenger ? 'passenger' : (process.env.PORT || 3001);
+
+logToFile(`📡 Calling app.listen on: ${listenTarget} (isPassenger: ${isPassenger})`);
 app.listen(listenTarget, () => {
 	logToFile(`🚀 API Server running on: ${listenTarget}`);
 	logger.info(`🚀 API Server running on: ${listenTarget}`);
