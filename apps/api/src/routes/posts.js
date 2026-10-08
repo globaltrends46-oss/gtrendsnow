@@ -6,6 +6,8 @@ import pb from '../utils/pocketbaseClient.js';
 
 const router = Router();
 
+let lastAutoPublishCheck = 0;
+
 // GET /posts - Fetch list of articles / blog posts
 router.get('/', (req, res) => {
   try {
@@ -14,6 +16,19 @@ router.get('/', (req, res) => {
     const offset = parseInt(req.query.offset, 10) || 0;
 
     const result = contentStore.getPosts({ category, limit, offset });
+
+    // Background Smart Auto-Publisher (Runs at most once every 30 mins)
+    const now = Date.now();
+    if (now - lastAutoPublishCheck > 30 * 60 * 1000) {
+      lastAutoPublishCheck = now;
+      const latestPost = result.items?.[0];
+      const sixHoursMs = 6 * 60 * 60 * 1000;
+      if (!latestPost || (now - new Date(latestPost.published_date).getTime() > sixHoursMs)) {
+        logger.info('⏰ Auto-publishing trigger: Latest post is >6 hours old, generating fresh trendjacking article in background...');
+        trendjackingPublisher(pb, logger).catch(err => logger.warn('Auto-publish failed:', err.message));
+      }
+    }
+
     res.json({
       success: true,
       category: category || 'all',

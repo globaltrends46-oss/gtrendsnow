@@ -66,24 +66,39 @@ export async function generateTextWithAI(prompt, loggerInstance = null, context 
   const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_NEW || process.env.GOOGLE_API_KEY)?.trim();
   const openrouterKey = (process.env.OPENROUTER_API_KEY)?.trim();
 
-  // 1. Primary: OmniRoute AI Gateway
-  if (omniKey) {
+  // 1. Primary: Direct Google Gemini API (gemini-2.5-flash) - Ultra fast & native
+  if (geminiKey) {
+    try {
+      activeLogger.info('🤖 Attempting AI generation via Google Gemini API (gemini-2.5-flash)...');
+      const genAI = new GoogleGenerativeAI(geminiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      if (text && text.trim()) {
+        activeLogger.info('✅ Gemini AI generation successful!');
+        return text;
+      }
+    } catch (err) {
+      activeLogger.error(`❌ Gemini API request failed: ${err.message}`);
+    }
+  }
+
+  // 2. Secondary: OmniRoute AI Gateway (if configured and reachable)
+  if (omniKey && process.env.OMNIROUTE_URL) {
     const baseUrls = [
       process.env.OMNIROUTE_BASE_URL?.replace(/\/$/, '') || 'http://127.0.0.1:20128/v1'
     ];
     const uniqueBaseUrls = Array.from(new Set(baseUrls));
     const models = [
-      process.env.OMNIROUTE_MODEL || 'auto/best-fast',
-      'auto/best-free'
+      process.env.OMNIROUTE_MODEL || 'auto/best-fast'
     ];
-    const uniqueModels = Array.from(new Set(models));
 
     for (const baseUrl of uniqueBaseUrls) {
-      for (const model of uniqueModels) {
+      for (const model of models) {
         try {
           activeLogger.info(`🤖 Attempting AI generation via OmniRoute [${baseUrl}] model [${model}]...`);
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 28000);
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const response = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
@@ -111,31 +126,11 @@ export async function generateTextWithAI(prompt, loggerInstance = null, context 
               activeLogger.info(`✅ OmniRoute AI generation successful via [${baseUrl}] using [${model}]!`);
               return content;
             }
-          } else {
-            const errText = await response.text();
-            activeLogger.warn(`⚠️ OmniRoute returned HTTP ${response.status}: ${errText.substring(0, 120)}`);
           }
         } catch (err) {
           activeLogger.warn(`⚠️ OmniRoute request failed at [${baseUrl}] [${model}]: ${err.message}`);
         }
       }
-    }
-  }
-
-  // 2. Secondary: Direct Google Gemini API (gemini-2.5-flash)
-  if (geminiKey) {
-    try {
-      activeLogger.info('🤖 Attempting AI generation via Google Gemini API (gemini-2.5-flash)...');
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (text && text.trim()) {
-        activeLogger.info('✅ Gemini AI generation successful!');
-        return text;
-      }
-    } catch (err) {
-      activeLogger.error(`❌ Gemini API request failed: ${err.message}`);
     }
   }
 
