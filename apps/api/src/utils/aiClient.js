@@ -66,20 +66,23 @@ export async function generateTextWithAI(prompt, loggerInstance = null, context 
   const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_NEW || process.env.GOOGLE_API_KEY)?.trim();
   const openrouterKey = (process.env.OPENROUTER_API_KEY)?.trim();
 
-  // 1. Primary: Direct Google Gemini API (gemini-2.5-flash) - Ultra fast & native
+  // 1. Primary: Direct Google Gemini API with cascade fallback across models
   if (geminiKey) {
-    try {
-      activeLogger.info('🤖 Attempting AI generation via Google Gemini API (gemini-2.5-flash)...');
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      if (text && text.trim()) {
-        activeLogger.info('✅ Gemini AI generation successful!');
-        return text;
+    const geminiModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    for (const modelName of geminiModels) {
+      try {
+        activeLogger.info(`🤖 Attempting AI generation via Google Gemini API (${modelName})...`);
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        if (text && text.trim()) {
+          activeLogger.info(`✅ Gemini AI generation successful with ${modelName}!`);
+          return text;
+        }
+      } catch (err) {
+        activeLogger.warn(`⚠️ Gemini model ${modelName} returned error: ${err.message}. Trying next model...`);
       }
-    } catch (err) {
-      activeLogger.error(`❌ Gemini API request failed: ${err.message}`);
     }
   }
 

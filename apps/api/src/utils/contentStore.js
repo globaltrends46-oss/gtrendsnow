@@ -47,7 +47,7 @@ export const contentStore = {
   /**
    * Save a newly generated post (persists to JSON and tries PocketBase)
    */
-  async savePost({ title, content, category, featured_image, author, published_date, hookDescription }) {
+  async savePost({ title, content, category, featured_image, author, published_date, hookDescription, trend_keyword }) {
     const newPost = {
       id: `post-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       title: title.trim(),
@@ -55,6 +55,7 @@ export const contentStore = {
       category: category || 'trendjacking',
       featured_image: featured_image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80',
       author: author || 'GTrends Global AI Research',
+      trend_keyword: trend_keyword || '',
       hookDescription: hookDescription || (content ? content.substring(0, 160).replace(/[#*]/g, '').trim() + '...' : ''),
       published_date: published_date || new Date().toISOString(),
       created: new Date().toISOString(),

@@ -60,15 +60,16 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// POST /posts/trigger-trendjacking - Manually trigger immediate trendjacking generation
+// POST /posts/trigger-trendjacking - Trigger trendjacking generation (e.g. top 3 or top 5)
 router.all('/trigger-trendjacking', async (req, res) => {
-  logger.info('⚡ Manual trigger received for trendjacking article');
+  const count = parseInt(req.query.count || req.body?.count, 10) || 3;
+  logger.info(`⚡ Trigger received for trendjacking articles (count: ${count})`);
   try {
-    const newPost = await trendjackingPublisher(pb, logger);
+    const newPosts = await trendjackingPublisher(pb, logger, count);
     res.json({
       success: true,
-      message: 'Trendjacking article published successfully!',
-      post: newPost
+      message: `${Array.isArray(newPosts) ? newPosts.length : 1} trendjacking article(s) published successfully!`,
+      posts: newPosts
     });
   } catch (err) {
     logger.error('Failed to publish trendjacking article:', err.message);

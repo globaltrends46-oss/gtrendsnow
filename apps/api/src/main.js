@@ -143,9 +143,9 @@ cron.schedule('0 20 * * *', () => {
 logger.info('Sports & Culture daily blog job scheduled (8 PM UTC)');
 
 cron.schedule('0 8,20 * * *', () => {
-	trendjackingPublisher(pb, logger).catch(err => logger.error('Trendjacking job failed:', err));
+	trendjackingPublisher(pb, logger, 3).catch(err => logger.error('Trendjacking job failed:', err));
 });
-logger.info('Trendjacking publisher job scheduled (8 AM & 8 PM UTC)');
+logger.info('Trendjacking publisher job scheduled (8 AM & 8 PM UTC - Top 3 Articles)');
 
 cron.schedule('0 9 * * 1', () => {
 	weeklyNewsletter(pb, logger).catch(err => logger.error('Weekly newsletter job failed:', err));
@@ -184,8 +184,8 @@ app.listen(listenTarget, () => {
 
 	// Automatic boot check: Trigger a trendjacking article run on server startup to verify publishing
 	setTimeout(() => {
-		logger.info('⚡ Running automatic startup trendjacking publisher check...');
-		trendjackingPublisher(pb, logger).catch(err => logger.warn('Startup publisher check status:', err.message));
+		logger.info('⚡ Running automatic startup trendjacking publisher check (top 3)...');
+		trendjackingPublisher(pb, logger, 3).catch(err => logger.warn('Startup publisher check status:', err.message));
 	}, 15000);
 });
 
