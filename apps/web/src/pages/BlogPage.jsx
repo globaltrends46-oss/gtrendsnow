@@ -49,7 +49,7 @@ const BlogPage = () => {
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [articles, setArticles] = useState(() => {
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_live_${TABS[0].id}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_topicimg_${TABS[0].id}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(formatPostToCard);
@@ -63,7 +63,7 @@ const BlogPage = () => {
     // 1. Immediately set from cache or fallback data to eliminate skeleton delays
     let initialData = getCategoryPosts(category);
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_live_${category}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_topicimg_${category}`);
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) initialData = parsed.map(formatPostToCard);
@@ -95,7 +95,7 @@ const BlogPage = () => {
       if (liveItems && liveItems.length > 0) {
         const mapped = liveItems.map(formatPostToCard).filter(Boolean);
         setArticles(mapped);
-        localStorage.setItem(`gtrends_blog_cache_v20261008_live_${category}`, JSON.stringify(mapped));
+        localStorage.setItem(`gtrends_blog_cache_v20261008_topicimg_${category}`, JSON.stringify(mapped));
         return;
       }
 

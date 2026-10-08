@@ -44,10 +44,69 @@ const categoryImages = {
 };
 
 const getCategoryFeaturedImage = (category) => {
-  const list = categoryImages[category.toLowerCase()] || categoryImages.tech;
+  const list = categoryImages[category?.toLowerCase()] || categoryImages.tech;
   const randomIndex = Math.floor(Math.random() * list.length);
   return list[randomIndex];
 };
+
+/**
+ * Resolves a dynamic, topic-specific high-resolution image for free:
+ * Tier 1: Queries Wikipedia / Wikimedia Commons for authentic press/encyclopedic photographs
+ * Tier 2: Dynamic Pollinations.ai tailored editorial image (100% Free, custom generated)
+ * Tier 3: Curated category stock library fallback
+ */
+export async function getTopicFeaturedImage(topicKeyword, category = 'trendjacking', contextTitle = '') {
+  if (!topicKeyword || typeof topicKeyword !== 'string') {
+    return getCategoryFeaturedImage(category);
+  }
+
+  const cleanKeyword = topicKeyword.trim();
+
+  // Tier 1: Wikimedia Commons / Wikipedia search for authentic real-world photos
+  try {
+    const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanKeyword)}&gsrlimit=1&prop=pageimages&pithumbsize=960&format=json`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    const res = await fetch(wikiUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'GTrendsGlobal/1.0 (https://gtrendsnow.com; editorial@gtrendsnow.com)'
+      }
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      const pages = data.query?.pages;
+      if (pages) {
+        for (const pageId in pages) {
+          const thumb = pages[pageId]?.thumbnail?.source;
+          if (thumb && thumb.startsWith('http')) {
+            logger.info(`📸 [Image Engine] Found authentic Wikipedia photo for "${cleanKeyword}": ${thumb}`);
+            return thumb;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    // Continue to Tier 2
+  }
+
+  // Tier 2: Dynamic Pollinations.ai tailored editorial image (100% Free)
+  try {
+    const descriptor = contextTitle ? `${cleanKeyword} ${contextTitle.slice(0, 40)}` : cleanKeyword;
+    const prompt = encodeURIComponent(`${descriptor} ${category} journalistic news editorial photography photorealistic cinematic`);
+    const aiImageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=500&nologo=true`;
+    logger.info(`🎨 [Image Engine] Using dynamic Pollinations visual for "${cleanKeyword}"`);
+    return aiImageUrl;
+  } catch (err) {
+    // Continue to Tier 3
+  }
+
+  // Tier 3: Curated fallback stock library
+  return getCategoryFeaturedImage(category);
+}
 
 /**
  * Clean and format generated blog text to extract title and body
@@ -308,7 +367,7 @@ Do not wrap your response in markdown code blocks like \`\`\`json. Return pure J
       });
 
       const parsed = parseAISubmission(responseText, `Daily ${category} Report: ${topicKeyword}`);
-      const featuredImage = getCategoryFeaturedImage(category);
+      const featuredImage = await getTopicFeaturedImage(topicKeyword, category, trendItem.newsTitle);
 
       // Save via contentStore (saves to disk JSON + syncs to PocketBase)
       const record = await contentStore.savePost({
@@ -401,7 +460,7 @@ Do not wrap your response in markdown code blocks like \`\`\`json. Return pure J
       });
 
       const parsed = parseAISubmission(responseText, `Breaking Trend: Latest on ${keyword}`);
-      const featuredImage = getCategoryFeaturedImage('trendjacking');
+      const featuredImage = await getTopicFeaturedImage(keyword, 'trendjacking', trendItem.newsTitle);
 
       // Save via contentStore (saves to disk JSON + syncs to PocketBase)
       const record = await contentStore.savePost({
