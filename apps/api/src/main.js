@@ -163,14 +163,9 @@ if (typeof PhusionPassenger !== 'undefined') {
   } catch (e) {}
 }
 
-const isPassenger = (typeof PhusionPassenger !== 'undefined') || 
-                    !!process.env.PASSENGER_APP_ENV || 
-                    !!process.env.PASSENGER_BASE_URI || 
-                    (process.cwd().includes('u516356423'));
+const listenTarget = (typeof PhusionPassenger !== 'undefined') ? 'passenger' : (process.env.PORT || 3001);
 
-const listenTarget = isPassenger ? 'passenger' : (process.env.PORT || 3001);
-
-logToFile(`📡 Calling app.listen on: ${listenTarget} (isPassenger: ${isPassenger})`);
+logToFile(`📡 Calling app.listen on: ${listenTarget}`);
 app.listen(listenTarget, () => {
 	logToFile(`🚀 API Server running on: ${listenTarget}`);
 	logger.info(`🚀 API Server running on: ${listenTarget}`);
