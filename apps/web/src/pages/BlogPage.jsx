@@ -16,28 +16,57 @@ const TABS = [
   { id: 'sports', label: 'Sports & Culture', icon: Trophy }
 ];
 
+const formatPostToCard = (record) => {
+  if (!record) return null;
+  if (record.urlToImage && record.link) return record;
+  return {
+    id: record.id,
+    title: record.title || 'Breaking Intelligence',
+    description: record.content 
+      ? record.content.substring(0, 180).replace(/[#*]/g, '').trim() + '...' 
+      : (record.hookDescription || ''),
+    urlToImage: record.featured_image || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?q=80&w=800&auto=format&fit=crop',
+    source: { name: record.author || 'GTrends AI' },
+    publishedAt: record.published_date || record.created,
+    link: `/blog/${record.id}`
+  };
+};
+
+const getCategoryPosts = (category) => {
+  let list = [];
+  if (fallbackBlogPosts && typeof fallbackBlogPosts === 'object' && !Array.isArray(fallbackBlogPosts)) {
+    list = fallbackBlogPosts[category] || [];
+  } else if (Array.isArray(fallbackBlogPosts)) {
+    list = fallbackBlogPosts.filter(p => p.category === category);
+    if (list.length === 0 && category === 'geopolitics') {
+      list = fallbackBlogPosts.filter(p => !p.category || p.category === 'geopolitics');
+    }
+  }
+  return list.map(formatPostToCard).filter(Boolean);
+};
+
 const BlogPage = () => {
   const [activeTab, setActiveTab] = useState(TABS[0].id);
   const [articles, setArticles] = useState(() => {
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_${TABS[0].id}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_live_${TABS[0].id}`);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed.map(formatPostToCard);
       }
     } catch (e) {}
-    return fallbackBlogPosts[TABS[0].id] || [];
+    return getCategoryPosts(TABS[0].id);
   });
   const [loading, setLoading] = useState(false);
 
   const fetchArticlesByCategory = async (category) => {
     // 1. Immediately set from cache or fallback data to eliminate skeleton delays
-    let initialData = fallbackBlogPosts[category] || [];
+    let initialData = getCategoryPosts(category);
     try {
-      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_${category}`);
+      const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_live_${category}`);
       if (cached) {
         const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) initialData = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) initialData = parsed.map(formatPostToCard);
       }
     } catch (e) {}
 
@@ -64,17 +93,9 @@ const BlogPage = () => {
 
       // If Express returned live items, map and update
       if (liveItems && liveItems.length > 0) {
-        const mapped = liveItems.map(record => ({
-          id: record.id,
-          title: record.title,
-          description: record.content ? record.content.substring(0, 180).replace(/[#*]/g, '') + '...' : '',
-          urlToImage: record.featured_image,
-          source: { name: record.author || 'GTrends AI' },
-          publishedAt: record.published_date || record.created,
-          link: `/blog/${record.id}`
-        }));
+        const mapped = liveItems.map(formatPostToCard).filter(Boolean);
         setArticles(mapped);
-        localStorage.setItem(`gtrends_blog_cache_v20261008_${category}`, JSON.stringify(mapped));
+        localStorage.setItem(`gtrends_blog_cache_v20261008_live_${category}`, JSON.stringify(mapped));
         return;
       }
 

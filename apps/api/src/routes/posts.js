@@ -23,9 +23,14 @@ router.get('/', (req, res) => {
       lastAutoPublishCheck = now;
       const latestPost = result.items?.[0];
       const sixHoursMs = 6 * 60 * 60 * 1000;
-      if (!latestPost || (now - new Date(latestPost.published_date).getTime() > sixHoursMs)) {
-        logger.info('⏰ Auto-publishing trigger: Latest post is >6 hours old, generating fresh trendjacking article in background...');
-        trendjackingPublisher(pb, logger).catch(err => logger.warn('Auto-publish failed:', err.message));
+      if (!latestPost || (now - new Date(latestPost.published_date || latestPost.created).getTime() > sixHoursMs)) {
+        if (category && ['geopolitics', 'energy', 'tech', 'sports'].includes(category)) {
+          logger.info(`⏰ Auto-publishing trigger: Latest [${category}] blog is >6h old, generating fresh blog post in background...`);
+          dailyBlogPublisher(pb, logger, category).catch(err => logger.warn(`Auto-publish failed for ${category}:`, err.message));
+        } else {
+          logger.info('⏰ Auto-publishing trigger: Latest post is >6 hours old, generating fresh trendjacking article in background...');
+          trendjackingPublisher(pb, logger).catch(err => logger.warn('Auto-publish failed:', err.message));
+        }
       }
     }
 

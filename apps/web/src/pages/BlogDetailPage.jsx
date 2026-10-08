@@ -41,7 +41,7 @@ const BlogDetailPage = () => {
 
         // 1. Instant match in fallbackBlogPosts and fallbackArticles
         const allFallback = [
-          ...Object.values(fallbackBlogPosts).flat(),
+          ...(Array.isArray(fallbackBlogPosts) ? fallbackBlogPosts : Object.values(fallbackBlogPosts).flat()),
           ...fallbackArticles
         ];
         const fbFound = allFallback.find(item => 
@@ -62,7 +62,7 @@ const BlogDetailPage = () => {
         // 2. Check local storage blog caches
         try {
           for (const cat of ['geopolitics', 'energy', 'tech', 'sports']) {
-            const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_${cat}`) || localStorage.getItem(`gtrends_blog_cache_v20260929_${cat}`) || localStorage.getItem(`gtrends_blog_cache_${cat}`);
+            const cached = localStorage.getItem(`gtrends_blog_cache_v20261008_live_${cat}`) || localStorage.getItem(`gtrends_blog_cache_v20261008_${cat}`) || localStorage.getItem(`gtrends_blog_cache_v20260929_${cat}`) || localStorage.getItem(`gtrends_blog_cache_${cat}`);
             if (cached) {
               const list = JSON.parse(cached);
               const foundInCache = list.find(item => item.id === slug || item.link?.endsWith(slug));
