@@ -118,6 +118,7 @@ app.use('/', routes());
 
 // Serve production static frontend if available
 const possibleDistDirs = [
+  process.cwd(),
   path.resolve(process.cwd(), 'dist'),
   path.resolve(__dirname, '../../../dist'),
   path.resolve(__dirname, '../../dist'),

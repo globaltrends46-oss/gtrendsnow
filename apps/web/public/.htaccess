@@ -6,26 +6,23 @@
     PassengerNodejs "/home/u516356423/nodevenv/public_html/22/bin/node"
     PassengerAppType node
     PassengerStartupFile "index.js"
+    PassengerEnabled off
 </IfModule>
 
 <IfModule mod_rewrite.c>
 	RewriteEngine On
 	RewriteBase /
 
-	# Disable LiteSpeed reCAPTCHA challenge for automated uptime and legitimate visitors
-	RewriteRule .* - [E=verifycaptcha:off]
-
-	# 1. Canonical Redirect: Route apex domain (gtrendsnow.com) to CDN-accelerated www.gtrendsnow.com
-	RewriteCond %{HTTP_HOST} ^gtrendsnow\.com$ [NC]
-	RewriteRule ^(.*)$ https://www.gtrendsnow.com/$1 [R=301,L]
-
-	# 2. Exclude backend API routes
+	# 1. Exclude backend API routes so they reach /hcgi
 	RewriteCond %{REQUEST_URI} ^/hcgi [NC]
 	RewriteRule .* - [L]
 
+	# 2. Directly serve physical files and directories
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule ^ - [L]
+
 	# 3. SPA Fallback routing for React Router
-	RewriteCond %{REQUEST_FILENAME} !-f
-	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ^ index.html [L]
 </IfModule>
 

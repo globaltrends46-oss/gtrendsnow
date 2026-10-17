@@ -3,3 +3,7 @@
 </IfModule>
 Options -Indexes +FollowSymLinks
 DirectoryIndex index.html
+
+<IfModule mod_passenger.c>
+    PassengerEnabled on
+</IfModule>
