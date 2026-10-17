@@ -93,15 +93,22 @@ export async function getTopicFeaturedImage(topicKeyword, category = 'trendjacki
     // Continue to Tier 2
   }
 
-  // Tier 2: Dynamic Pollinations.ai tailored editorial image (100% Free)
-  try {
-    const descriptor = contextTitle ? `${cleanKeyword} ${contextTitle.slice(0, 40)}` : cleanKeyword;
-    const prompt = encodeURIComponent(`${descriptor} ${category} journalistic news editorial photography photorealistic cinematic`);
-    const aiImageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=800&height=500&nologo=true`;
-    logger.info(`🎨 [Image Engine] Using dynamic Pollinations visual for "${cleanKeyword}"`);
-    return aiImageUrl;
-  } catch (err) {
-    // Continue to Tier 3
+  // Tier 2: Topic-specific high-resolution editorial photography (100% Free, Zero Rate Limits)
+  const topicLower = `${cleanKeyword} ${contextTitle}`.toLowerCase();
+  if (topicLower.includes('football') || topicLower.includes('bundesliga') || topicLower.includes('bayern') || topicLower.includes('soccer') || topicLower.includes('league') || topicLower.includes('scunthorpe') || topicLower.includes('united')) {
+    return 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=960&q=80';
+  }
+  if (topicLower.includes('court') || topicLower.includes('sentencia') || topicLower.includes('legal') || topicLower.includes('law') || topicLower.includes('judge')) {
+    return 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=960&q=80';
+  }
+  if (topicLower.includes('cyber') || topicLower.includes('data center') || topicLower.includes('rechenzentrum') || topicLower.includes('server') || topicLower.includes('ai') || topicLower.includes('chip') || topicLower.includes('tech')) {
+    return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=960&q=80';
+  }
+  if (topicLower.includes('iran') || topicLower.includes('geopolit') || topicLower.includes('war') || topicLower.includes('treaty') || topicLower.includes('diplomacy') || topicLower.includes('summit')) {
+    return 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=960&q=80';
+  }
+  if (topicLower.includes('energy') || topicLower.includes('oil') || topicLower.includes('grid') || topicLower.includes('power') || topicLower.includes('solar') || topicLower.includes('wind')) {
+    return 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=960&q=80';
   }
 
   // Tier 3: Curated fallback stock library
