@@ -127,8 +127,8 @@ const possibleDistDirs = [
 for (const dir of possibleDistDirs) {
   if (fs.existsSync(path.join(dir, 'index.html'))) {
     app.use(express.static(dir));
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api') || req.path.startsWith('/hcgi')) {
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/hcgi')) {
         return next();
       }
       res.sendFile(path.join(dir, 'index.html'));
