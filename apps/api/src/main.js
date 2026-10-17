@@ -115,6 +115,28 @@ app.use('/hcgi', routes());
 app.use('/api', routes());
 app.use('/', routes());
 
+// Serve production static frontend if available
+const possibleDistDirs = [
+  path.resolve(process.cwd(), 'dist'),
+  path.resolve(__dirname, '../../../dist'),
+  path.resolve(__dirname, '../../dist'),
+  path.resolve(__dirname, '../../web/dist'),
+  path.resolve(process.cwd(), 'public_html')
+];
+
+for (const dir of possibleDistDirs) {
+  if (fs.existsSync(path.join(dir, 'index.html'))) {
+    app.use(express.static(dir));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/hcgi')) {
+        return next();
+      }
+      res.sendFile(path.join(dir, 'index.html'));
+    });
+    break;
+  }
+}
+
 app.use(errorMiddleware);
 
 app.use((req, res) => {
@@ -163,13 +185,15 @@ if (typeof PhusionPassenger !== 'undefined') {
   } catch (e) {}
 }
 
+// Priority 1: If environment explicitly provides PORT (Hostinger Node.js Container/Proxy), listen on that TCP port!
+// Priority 2: If running under Phusion Passenger (and no PORT is set), listen on 'passenger'.
+// Priority 3: Fall back to default 3001.
+const port = process.env.PORT;
 const isPassenger = (typeof PhusionPassenger !== 'undefined') || 
-                    !!process.env.PASSENGER_APP_ENV || 
-                    !!process.env.PASSENGER_BASE_URI || 
-                    (process.cwd().includes('u516356423')) ||
-                    (process.cwd().includes('public_html'));
+                    (!!process.env.PASSENGER_APP_ENV && !port) || 
+                    (!!process.env.PASSENGER_BASE_URI && !port);
 
-const listenTarget = isPassenger ? 'passenger' : (process.env.PORT || 3001);
+const listenTarget = port || (isPassenger ? 'passenger' : 3001);
 
 logToFile(`📡 Calling app.listen on: ${listenTarget}`);
 app.listen(listenTarget, () => {

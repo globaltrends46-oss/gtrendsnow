@@ -55,6 +55,20 @@ try {
   }
 
   console.log('🎉 All backend deployment assets copied to dist/ directory successfully!');
+
+  // Also ensure root directory has index.html and assets in case Hostinger root directory is ./
+  if (fs.existsSync(path.resolve(distDir, 'index.html'))) {
+    console.log('🚚 Syncing dist/index.html -> root/index.html');
+    fs.copyFileSync(path.resolve(distDir, 'index.html'), path.resolve(rootDir, 'index.html'));
+  }
+  if (fs.existsSync(path.resolve(distDir, 'assets'))) {
+    console.log('🚚 Syncing dist/assets -> root/assets');
+    fs.cpSync(path.resolve(distDir, 'assets'), path.resolve(rootDir, 'assets'), { recursive: true, force: true });
+  }
+  if (fs.existsSync(path.resolve(distDir, 'sitemap.xml'))) {
+    console.log('🚚 Syncing dist/sitemap.xml -> root/sitemap.xml');
+    fs.copyFileSync(path.resolve(distDir, 'sitemap.xml'), path.resolve(rootDir, 'sitemap.xml'));
+  }
 } catch (err) {
   console.error('❌ Failed to copy backend deployment assets:', err.message);
   process.exit(1);
