@@ -13,16 +13,20 @@
 	RewriteEngine On
 	RewriteBase /
 
-	# 1. Exclude backend API routes so they reach /hcgi
+	# 1. Canonical Redirect: Direct www to apex domain (gtrendsnow.com)
+	RewriteCond %{HTTP_HOST} ^www\.gtrendsnow\.com$ [NC]
+	RewriteRule ^(.*)$ https://gtrendsnow.com/$1 [R=301,L]
+
+	# 2. Exclude backend API routes so they reach /hcgi
 	RewriteCond %{REQUEST_URI} ^/hcgi [NC]
 	RewriteRule .* - [L]
 
-	# 2. Directly serve physical files and directories
+	# 3. Directly serve physical files and directories
 	RewriteCond %{REQUEST_FILENAME} -f [OR]
 	RewriteCond %{REQUEST_FILENAME} -d
 	RewriteRule ^ - [L]
 
-	# 3. SPA Fallback routing for React Router
+	# 4. SPA Fallback routing for React Router
 	RewriteRule ^ index.html [L]
 </IfModule>
 
