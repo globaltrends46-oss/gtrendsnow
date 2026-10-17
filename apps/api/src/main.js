@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Root debug.log file
 const logFile = path.resolve(process.cwd(), 'debug.log');
 
@@ -125,13 +126,20 @@ const possibleDistDirs = [
 ];
 
 for (const dir of possibleDistDirs) {
-  if (fs.existsSync(path.join(dir, 'index.html'))) {
-    app.use(express.static(dir));
+  const indexHtml = path.join(dir, 'index.html');
+  if (fs.existsSync(indexHtml)) {
+    app.use(express.static(dir, { dotfiles: 'allow' }));
     app.use((req, res, next) => {
       if (req.method !== 'GET' || req.path.startsWith('/api') || req.path.startsWith('/hcgi')) {
         return next();
       }
-      res.sendFile(path.join(dir, 'index.html'));
+      try {
+        const html = fs.readFileSync(indexHtml, 'utf-8');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+      } catch (e) {
+        next();
+      }
     });
     break;
   }
