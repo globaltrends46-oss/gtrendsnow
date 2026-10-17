@@ -185,15 +185,13 @@ if (typeof PhusionPassenger !== 'undefined') {
   } catch (e) {}
 }
 
-// Priority 1: If environment explicitly provides PORT (Hostinger Node.js Container/Proxy), listen on that TCP port!
-// Priority 2: If running under Phusion Passenger (and no PORT is set), listen on 'passenger'.
-// Priority 3: Fall back to default 3001.
-const port = process.env.PORT;
 const isPassenger = (typeof PhusionPassenger !== 'undefined') || 
-                    (!!process.env.PASSENGER_APP_ENV && !port) || 
-                    (!!process.env.PASSENGER_BASE_URI && !port);
+                    !!process.env.PASSENGER_APP_ENV || 
+                    !!process.env.PASSENGER_BASE_URI || 
+                    (process.cwd().includes('u516356423')) ||
+                    (process.cwd().includes('public_html'));
 
-const listenTarget = port || (isPassenger ? 'passenger' : 3001);
+const listenTarget = isPassenger ? 'passenger' : (process.env.PORT || 3001);
 
 logToFile(`📡 Calling app.listen on: ${listenTarget}`);
 app.listen(listenTarget, () => {
