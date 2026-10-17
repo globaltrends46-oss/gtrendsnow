@@ -12,6 +12,9 @@
 	RewriteEngine On
 	RewriteBase /
 
+	# Disable LiteSpeed reCAPTCHA challenge for automated uptime and legitimate visitors
+	RewriteRule .* - [E=verifycaptcha:off]
+
 	# 1. Canonical Redirect: Route apex domain (gtrendsnow.com) to CDN-accelerated www.gtrendsnow.com
 	RewriteCond %{HTTP_HOST} ^gtrendsnow\.com$ [NC]
 	RewriteRule ^(.*)$ https://www.gtrendsnow.com/$1 [R=301,L]
